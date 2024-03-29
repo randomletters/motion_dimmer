@@ -1,0 +1,14 @@
+{
+  "domain": "motion_dimmer",
+  "name": "Motion Dimmers",
+  "codeowners": ["@randomletters"],
+  "config_flow": true,
+  "dependencies": ["input_select"],
+  "documentation": "https://www.home-assistant.io/integrations/motion_dimmer",
+  "homekit": {},
+  "iot_class": "local_polling",
+  "requirements": [],
+  "ssdp": [],
+  "version": "0.1.1",
+  "zeroconf": []
+}
