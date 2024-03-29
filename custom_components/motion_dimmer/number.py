@@ -23,11 +23,11 @@ class MotionDimmerNumber(MotionDimmerEntity, RestoreNumber):
         self,
         data: MotionDimmerData,
         entity_name,
-        entity_id,
+        unique_id,
         default_value=None,
         min_value: float = 0,
     ) -> None:
-        super().__init__(data, entity_name, entity_id)
+        super().__init__(data, entity_name, unique_id)
         self._default_value = default_value
         self._attr_native_min_value = min_value
 
@@ -80,26 +80,26 @@ async def async_setup_entry(
         PercentNumber(
             data,
             entity_name="Min. Brightness",
-            entity_id=internal_id(ControlEntities.MIN_BRIGHTNESS, data.device_id),
+            unique_id=internal_id(ControlEntities.MIN_BRIGHTNESS, data.device_id),
             default_value=1,
         ),
         TimeNumber(
             data,
             entity_name="Trigger Test Interval",
-            entity_id=internal_id(ControlEntities.TRIGGER_INTERVAL, data.device_id),
+            unique_id=internal_id(ControlEntities.TRIGGER_INTERVAL, data.device_id),
             default_value=60,
         ),
         TimeNumber(
             data,
             entity_name="Max. Extension",
-            entity_id=internal_id(ControlEntities.EXTENSION_MAX, data.device_id),
+            unique_id=internal_id(ControlEntities.EXTENSION_MAX, data.device_id),
             default_value=60 * 60,
             min_value=1,
         ),
         TimeNumber(
             data,
             entity_name="Manual Override Time",
-            entity_id=internal_id(ControlEntities.MANUAL_OVERRIDE, data.device_id),
+            unique_id=internal_id(ControlEntities.MANUAL_OVERRIDE, data.device_id),
             default_value=60 * 10,
             min_value=0,
         ),
@@ -110,7 +110,7 @@ async def async_setup_entry(
             TimeNumber(
                 data,
                 entity_name="Prediction Time",
-                entity_id=internal_id(ControlEntities.PREDICTION_SECS, data.device_id),
+                unique_id=internal_id(ControlEntities.PREDICTION_SECS, data.device_id),
                 default_value=10,
                 min_value=1,
             )
@@ -119,7 +119,7 @@ async def async_setup_entry(
             PercentNumber(
                 data,
                 entity_name="Prediction Brightness",
-                entity_id=internal_id(
+                unique_id=internal_id(
                     ControlEntities.PREDICTION_BRIGHTNESS, data.device_id
                 ),
                 default_value=50,
@@ -133,7 +133,7 @@ async def async_setup_entry(
             TimeNumber(
                 data,
                 entity_name=f"-{seg_name} Seconds",
-                entity_id=internal_id(
+                unique_id=internal_id(
                     ControlEntities.SEG_SECONDS, data.device_id, seg_id
                 ),
                 default_value=60,

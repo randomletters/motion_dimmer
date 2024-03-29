@@ -81,7 +81,7 @@ async def async_setup_entry(
             MotionDimmerLight(
                 data,
                 entity_name=f"-{seg_name} Light Settings",
-                entity_id=internal_id(
+                unique_id=internal_id(
                     ControlEntities.SEG_LIGHT, data.device_id, seg_id
                 ),
             )

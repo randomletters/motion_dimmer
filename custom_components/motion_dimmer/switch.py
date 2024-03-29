@@ -37,9 +37,9 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
     _attr_has_entity_name = True
     _attr_device_class = SwitchDeviceClass.SWITCH
 
-    def __init__(self, data: MotionDimmerData, entity_name, entity_id) -> None:
+    def __init__(self, data: MotionDimmerData, entity_name, unique_id) -> None:
         """Initialize the switch."""
-        super().__init__(data, entity_name, entity_id)
+        super().__init__(data, entity_name, unique_id)
         self._default_value = "on"
         self._data = data
         self._is_prediction = False
@@ -562,7 +562,7 @@ async def async_setup_entry(
             MotionDimmerSwitch(
                 data,
                 entity_name="Motion Dimmer",
-                entity_id=internal_id(CE.CONTROL_SWITCH, data.device_id),
+                unique_id=internal_id(CE.CONTROL_SWITCH, data.device_id),
             ),
         ]
     )

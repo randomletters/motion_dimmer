@@ -19,16 +19,17 @@ _LOGGER = logging.getLogger(__name__)
 class TimerSensor(MotionDimmerEntity, RestoreSensor):
     """Representation of a Sensor."""
 
+    _attr_has_entity_name = True
     _attr_device_class = None
 
     def __init__(
         self,
         data: MotionDimmerData,
         entity_name,
-        entity_id,
+        unique_id,
     ) -> None:
         """Initialize the Sensor."""
-        super().__init__(data, entity_name, entity_id)
+        super().__init__(data, entity_name, unique_id)
 
         self._attr_extra_state_attributes = {
             "timer_end": None,
@@ -68,7 +69,7 @@ async def async_setup_entry(
             TimerSensor(
                 data,
                 entity_name="Timer",
-                entity_id=internal_id(ControlEntities.TIMER, data.device_id),
+                unique_id=internal_id(ControlEntities.TIMER, data.device_id),
             ),
         ]
     )
