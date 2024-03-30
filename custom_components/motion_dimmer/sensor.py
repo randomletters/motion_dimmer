@@ -19,7 +19,6 @@ _LOGGER = logging.getLogger(__name__)
 class TimerSensor(MotionDimmerEntity, RestoreSensor):
     """Representation of a Sensor."""
 
-    _attr_has_entity_name = True
     _attr_device_class = None
 
     def __init__(
@@ -39,12 +38,11 @@ class TimerSensor(MotionDimmerEntity, RestoreSensor):
     async def async_update(self) -> None:
         """Fetch new state data for the sensor."""
 
-        timer_end = self.hass.states.get(
+        switch_attrs = self.hass.states.get(
             self.external_id(ControlEntities.CONTROL_SWITCH)
-        ).attributes.get("timer_end")
-        timer_seconds = self.hass.states.get(
-            self.external_id(ControlEntities.CONTROL_SWITCH)
-        ).attributes.get("timer_seconds")
+        ).attributes
+        timer_end = switch_attrs.get("timer_end")
+        timer_seconds = switch_attrs.get("timer_seconds")
         if timer_end:
             timer_end = datetime.datetime.fromisoformat(str(timer_end))
             self._attr_extra_state_attributes["timer_end"] = timer_end
@@ -52,7 +50,7 @@ class TimerSensor(MotionDimmerEntity, RestoreSensor):
                 self._attr_native_value = "Active"
             else:
                 self._attr_native_value = "Idle"
-        if timer_seconds:
+
             self._attr_extra_state_attributes["timer_seconds"] = timer_seconds
 
 

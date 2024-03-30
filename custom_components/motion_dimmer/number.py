@@ -17,8 +17,6 @@ _LOGGER = logging.getLogger(__name__)
 class MotionDimmerNumber(MotionDimmerEntity, RestoreNumber):
     """Representation of a Number."""
 
-    _attr_has_entity_name = True
-
     def __init__(
         self,
         data: MotionDimmerData,

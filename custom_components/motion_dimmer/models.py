@@ -31,6 +31,8 @@ class MotionDimmerData:
 class MotionDimmerEntity(Entity):
     """Motion Dimmer entity."""
 
+    _attr_has_entity_name = True
+
     def __init__(
         self,
         data: MotionDimmerData,

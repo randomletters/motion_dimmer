@@ -34,7 +34,6 @@ _LOGGER = logging.getLogger(__name__)
 class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
     """Representation of a Motion Dimmer Switch."""
 
-    _attr_has_entity_name = True
     _attr_device_class = SwitchDeviceClass.SWITCH
 
     def __init__(self, data: MotionDimmerData, entity_name, unique_id) -> None:

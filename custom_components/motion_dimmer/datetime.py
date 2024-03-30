@@ -20,7 +20,6 @@ _LOGGER = logging.getLogger(__name__)
 class MotionDimmerDateTime(MotionDimmerEntity, DateTimeEntity, RestoreEntity):
     """Representation of a DateTime."""
 
-    _attr_has_entity_name = True
     _attr_name = None
     # _attr_should_poll = False
 
