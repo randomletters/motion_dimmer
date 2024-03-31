@@ -10,6 +10,7 @@ from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP,
     ATTR_RGB_COLOR,
+    ATTR_TRANSITION,
     DOMAIN as LIGHT_DOMAIN,
 )
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
@@ -167,7 +168,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
     @property
     def seg_attrs(self) -> dict[str, Any]:
         """The light setting attributes."""
-        values = {}
+        values = {ATTR_TRANSITION: 1}
         if self.brightness:
             values[ATTR_BRIGHTNESS] = self.brightness
         if self.color_temp:
