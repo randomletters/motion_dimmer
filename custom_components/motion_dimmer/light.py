@@ -9,6 +9,7 @@ from homeassistant.components.light import (
     ATTR_COLOR_MODE,
     ATTR_COLOR_TEMP,
     ATTR_RGB_COLOR,
+    ATTR_WHITE,
     ColorMode,
     LightEntity,
     LightEntityFeature,
@@ -29,7 +30,7 @@ class MotionDimmerLight(MotionDimmerEntity, LightEntity, RestoreEntity):
 
     _attr_brightness: int | None = None
     _attr_color_mode = ColorMode.RGB
-    _attr_supported_color_modes = [ColorMode.COLOR_TEMP, ColorMode.RGB]
+    _attr_supported_color_modes = [ColorMode.COLOR_TEMP, ColorMode.RGB, ColorMode.WHITE]
     _attr_supported_features = LightEntityFeature(LightEntityFeature.TRANSITION)
 
     def turn_on(self, **kwargs: Any) -> None:
@@ -44,6 +45,10 @@ class MotionDimmerLight(MotionDimmerEntity, LightEntity, RestoreEntity):
         if kwargs.get(ATTR_COLOR_TEMP):
             self._attr_color_mode = ColorMode.COLOR_TEMP
             self._attr_color_temp = kwargs.get(ATTR_COLOR_TEMP, self._attr_color_temp)
+        if kwargs.get(ATTR_WHITE):
+            self._attr_color_mode = ColorMode.WHITE
+            self._attr_color_temp = None
+            self._attr_rgb_color = None
 
     def turn_off(self, **kwargs: Any) -> None:
         """Turn off the light."""
