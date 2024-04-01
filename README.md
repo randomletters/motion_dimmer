@@ -1,4 +1,4 @@
-# Motion Dimmer 
+# Motion Dimmer
 Have a dimmer respond differently to a motion trigger depending on several criteria.
 
 ## Dropdown Helper
@@ -6,6 +6,7 @@ A Motion Dimmer must be associated with a dropdown helper (input_select).  Each 
 For example:  if you create a dropdown for segments of the day like: Day, Night, and Sleeping…
 You could set a cool color temp at full brightness during the day, warm color temp at night with 50% brightness, and red light at 1% at night.
 
+## Setup
 When adding a Motion Dimmer you must first enter:
 
 - `Name:` The name of the Motion Dimmer, for example "Kitchen Island"
@@ -31,6 +32,8 @@ Once configured, you can edit the entities that control the Motion Dimmer by goi
 - `Prediction Brightness:`  You might set this to a low brightness that just illuminates the room.  If you activate the trigger, the Motion Dimmer will turn on to full brightness.  If you don't, it will turn back off after a short time.
 - `Minimum brightness:`  Some dimmers won’t turn on if you go from off to 1%, but they will work if you start from a higher number.  Minimum brightness is the percent that the light needs to activate before being lowered to the desired brightness.  If the Motion Dimmer is set to a brightness that is lower than the minimum brightness, the light will first turn on at the minimum number for 1 second and then be lowered.
 
-Note, all of these entities can be manipulated with automations and scenes to add more sophisticated functionality.  Adding these entities to groups can allow for convenient dashboards, as well.
+## Note
+All of these entities can be manipulated with automations and scenes to add more sophisticated functionality.  Adding these entities to groups can allow for convenient dashboards, as well.
 
+## Timer
 Motion Dimmer also provides a sensor which tracks the timer.  The state is either “Active” or “Idle” and it has two attributes: `timer_end` and `timer_seconds`.  This can be used in conjunction with integrations like “Timer Bar Card” to display a countdown timer in dashboards.
