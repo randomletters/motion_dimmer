@@ -156,14 +156,24 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         if not self.is_on:
             return False
 
-        if now() < self.disabled_until:
+        if self.is_temporarily_disabled:
             return False
 
+        return self.is_segment_enabled
+
+    @property
+    def is_temporarily_disabled(self) -> bool:
+        """Return true if device is temporarily disabled."""
+        return now() < self.disabled_until
+
+    @property
+    def is_segment_enabled(self) -> bool:
+        """Return true if segment is enabled."""
         state = self.hass.states.get(self.external_id(CE.SEG_LIGHT, self.segment_id))
         if state:
             return state.state == "on"
-        else:
-            return False
+
+        return False
 
     @property
     def seg_attrs(self) -> dict[str, Any]:
@@ -331,9 +341,10 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
 
     async def async_stop_dimmer(self) -> None:
         """Turn off the dimmer."""
-        if self.is_enabled:
-            # Check if triggers are are still on.
-            if self.are_triggers_on:
+        if self.is_on and not self.is_temporarily_disabled:
+            # Check if triggers are are still on and make sure the segment
+            # didn't get disabled or transitioned to a disabled segment.
+            if self.are_triggers_on and self.is_segment_enabled:
                 # Restart everything instead of stopping.
                 await self.async_start_dimmer()
             else:
@@ -430,6 +441,8 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         """Restart dimmer if triggers are active."""
         if self.are_triggers_on:
             await self.async_start_dimmer()
+        else:
+            self.schedule_periodic_timer()
 
     async def async_schedule_callback(self, *args: Any) -> None:
         """Turn off the dimmer because timer ran out."""
@@ -439,6 +452,10 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
     async def async_periodic_callback(self, *args: Any) -> None:
         """Repeatedly check the triggers to reset the timer."""
         await self.async_check_triggers()
+        # Check if the segment has been disabled or we have transitioned
+        # to a disabled segment.
+        if not self.is_segment_enabled:
+            await self.async_stop_dimmer()
 
     async def async_turn_on_dimmer(self, args: dict[str, Any]) -> None:
         """Turn the dimmer on."""
