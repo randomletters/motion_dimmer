@@ -4,7 +4,8 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     CONF_DIMMER,
@@ -14,8 +15,10 @@ from .const import (
     CONF_TRIGGERS,
     CONF_UNIQUE_NAME,
     DOMAIN,
+    SERVICE_DISABLE,
 )
 from .models import MotionDimmerData
+from .services import async_service_temporarily_disable
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,6 +29,17 @@ PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.SWITCH,
 ]
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType):
+    """Handle the setup tasks."""
+
+    async def async_temporarily_disable(call: ServiceCall):
+        await async_service_temporarily_disable(hass, call)
+
+    hass.services.async_register(DOMAIN, SERVICE_DISABLE, async_temporarily_disable)
+
+    return True
 
 
 async def async_setup_entry(

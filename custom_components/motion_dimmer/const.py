@@ -14,6 +14,11 @@ CONF_INPUT_SELECT = "input_select"
 CONF_TRIGGERS = "triggers"
 CONF_PREDICTERS = "predicters"
 
+SERVICE_DISABLE = "temporarily_disable"
+SERVICE_SECONDS = "seconds"
+SERVICE_MINUTES = "minutes"
+SERVICE_HOURS = "hours"
+
 # Control Entities
 
 PLATFORM = "platform"

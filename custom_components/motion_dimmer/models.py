@@ -62,11 +62,7 @@ class MotionDimmerEntity(Entity):
         self, ced: ControlEntityData, seg_id: str | None = None
     ) -> str | None:
         """Get the entity id from entity data."""
-        ent_reg = er.async_get(self.hass)
-        if entity_id := ent_reg.async_get_entity_id(
-            ced.platform, DOMAIN, internal_id(ced, self._data.device_id, seg_id)
-        ):
-            return entity_id
+        return external_id(self.hass, ced, self._data.device_id, seg_id)
 
 
 def segments(hass: HomeAssistant, entry: ConfigEntry) -> dict:
@@ -89,3 +85,17 @@ def internal_id(
     """Create a unique id from parts."""
     suffix = seg_id + "_" + ced.id_suffix if seg_id else ced.id_suffix
     return ced.platform + "." + DOMAIN + "_" + device_id + "_" + suffix
+
+
+def external_id(
+    hass: HomeAssistant,
+    ced: ControlEntityData,
+    device_id: str,
+    seg_id: str | None = None,
+) -> str | None:
+    """Get the entity id from entity data."""
+    ent_reg = er.async_get(hass)
+    if entity_id := ent_reg.async_get_entity_id(
+        ced.platform, DOMAIN, internal_id(ced, device_id, seg_id)
+    ):
+        return entity_id

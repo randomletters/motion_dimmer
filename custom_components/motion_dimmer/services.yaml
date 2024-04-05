@@ -1,0 +1,31 @@
+# Service ID
+temporarily_disable:
+  target:
+    entity:
+      domain: datetime
+      # integration: motion_dimmer
+  fields:
+    seconds:
+      example: 120
+      selector:
+        number:
+          min: 1
+          max: 43200
+          mode: box
+          unit_of_measurement: Seconds
+    minutes:
+      example: 120
+      selector:
+        number:
+          min: 1
+          max: 720
+          mode: box
+          unit_of_measurement: Minutes
+    hours:
+      example: 12
+      selector:
+        number:
+          min: 1
+          max: 12
+          mode: box
+          unit_of_measurement: Hours
