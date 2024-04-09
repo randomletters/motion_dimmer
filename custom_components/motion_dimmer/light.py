@@ -1,4 +1,5 @@
 """Motion Dimmer Light."""
+
 from __future__ import annotations
 
 import logging
@@ -85,7 +86,7 @@ async def async_setup_entry(
         entities.append(
             MotionDimmerLight(
                 data,
-                entity_name=f"-{seg_name} Light Settings",
+                entity_name=f"Option: {seg_name}",
                 unique_id=internal_id(
                     ControlEntities.SEG_LIGHT, data.device_id, seg_id
                 ),

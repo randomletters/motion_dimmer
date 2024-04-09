@@ -1,4 +1,5 @@
 """Platform for number integration."""
+
 from __future__ import annotations
 
 import logging
@@ -25,6 +26,7 @@ class MotionDimmerNumber(MotionDimmerEntity, RestoreNumber):
         default_value=None,
         min_value: float = 0,
     ) -> None:
+        """Initialize the number entity."""
         super().__init__(data, entity_name, unique_id)
         self._default_value = default_value
         self._attr_native_min_value = min_value
@@ -130,7 +132,7 @@ async def async_setup_entry(
         entities.append(
             TimeNumber(
                 data,
-                entity_name=f"-{seg_name} Seconds",
+                entity_name=f"Option: {seg_name}",
                 unique_id=internal_id(
                     ControlEntities.SEG_SECONDS, data.device_id, seg_id
                 ),
