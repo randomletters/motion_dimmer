@@ -14,6 +14,7 @@ CONF_INPUT_SELECT = "input_select"
 CONF_TRIGGERS = "triggers"
 CONF_PREDICTERS = "predicters"
 
+SERVICE_ENABLE = "enable"
 SERVICE_DISABLE = "temporarily_disable"
 SERVICE_SECONDS = "seconds"
 SERVICE_MINUTES = "minutes"

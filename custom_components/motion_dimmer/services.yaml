@@ -1,9 +1,7 @@
-# Service ID
 temporarily_disable:
   target:
     entity:
       domain: datetime
-      # integration: motion_dimmer
   fields:
     seconds:
       example: 120
@@ -29,3 +27,7 @@ temporarily_disable:
           max: 12
           mode: box
           unit_of_measurement: Hours
+enable:
+  target:
+    entity:
+      domain: switch

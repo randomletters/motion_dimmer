@@ -16,9 +16,10 @@ from .const import (
     CONF_UNIQUE_NAME,
     DOMAIN,
     SERVICE_DISABLE,
+    SERVICE_ENABLE,
 )
 from .models import MotionDimmerData
-from .services import async_service_temporarily_disable
+from .services import async_service_enable, async_service_temporarily_disable
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,6 +39,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType):
         await async_service_temporarily_disable(hass, call)
 
     hass.services.async_register(DOMAIN, SERVICE_DISABLE, async_temporarily_disable)
+
+    async def async_enable(call: ServiceCall):
+        await async_service_enable(hass, call)
+
+    hass.services.async_register(DOMAIN, SERVICE_ENABLE, async_enable)
 
     return True
 

@@ -4,6 +4,7 @@ import datetime
 import logging
 
 from homeassistant.components.datetime import DOMAIN as DATETIME_DOMAIN
+from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.service import ServiceTargetSelector
@@ -68,3 +69,46 @@ async def async_update_disable(
                 "datetime": next_time,
             },
         )
+
+
+async def async_service_enable(hass: HomeAssistant, call: ServiceCall):
+    """Handle the service call."""
+
+    target = ServiceTargetSelector(call)
+    if not target.has_any_selector:
+        return
+
+    entity_reg = er.async_get(hass)
+
+    for unique_id in target.device_ids:
+        entries = er.async_entries_for_device(entity_reg, unique_id)
+        data: MotionDimmerData = hass.data[DOMAIN][entries[0].config_entry_id]
+        await async_enable(hass, data)
+
+    for entity_id in target.entity_ids:
+        entity = entity_reg.async_get(entity_id)
+        data: MotionDimmerData = hass.data[DOMAIN][entity.config_entry_id]
+        await async_enable(hass, data)
+
+
+async def async_enable(hass: HomeAssistant, data: MotionDimmerData):
+    """Reset the temporary disable entity."""
+
+    next_time = now()
+
+    await hass.services.async_call(
+        DATETIME_DOMAIN,
+        "set_value",
+        {
+            "entity_id": external_id(hass, CE.DISABLED_UNTIL, data.device_id),
+            "datetime": next_time,
+        },
+    )
+
+    await hass.services.async_call(
+        SWITCH_DOMAIN,
+        "turn_on",
+        {
+            "entity_id": external_id(hass, CE.CONTROL_SWITCH, data.device_id),
+        },
+    )
