@@ -1,4 +1,5 @@
 """Platform for sensor integration."""
+
 from __future__ import annotations
 
 import datetime
@@ -20,6 +21,7 @@ class TimerSensor(MotionDimmerEntity, RestoreSensor):
     """Representation of a Sensor."""
 
     _attr_device_class = None
+    _attr_icon = "mdi:timer"
 
     def __init__(
         self,
