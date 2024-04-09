@@ -1,4 +1,5 @@
 """Platform for switch integration."""
+
 from __future__ import annotations
 
 import datetime
@@ -65,9 +66,10 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
             self._attr_extra_state_attributes["timer_end"] = last_state.attributes.get(
                 "timer_end"
             )
-            self._attr_extra_state_attributes[
-                "timer_seconds"
-            ] = last_state.attributes.get("timer_seconds")
+            self._attr_extra_state_attributes["timer_seconds"] = (
+                last_state.attributes.get("timer_seconds")
+            )
+            self.init_timer()
 
         # Add dimmer on listener
         if self._data.dimmer:
@@ -320,6 +322,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
                 not self._is_pump
                 and not self._is_prediction
                 and self._dimmer_previous_state == "off"
+                and self.brightness
                 and self.brightness < self.brightness_min
             ):
                 self._is_pump = True
@@ -397,6 +400,8 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         if seconds and int(seconds) > 0:
             delay = datetime.timedelta(seconds=int(seconds))
             next_time = now() + delay
+        else:
+            return
 
         # Only set a new disable if it is later than the old one.
         if self.disabled_until < next_time:
@@ -468,12 +473,17 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
             args,
         )
 
-    def schedule_timer(self) -> None:
+    def schedule_timer(
+        self, next_time: datetime.datetime | None = None, seconds: int | None = None
+    ) -> None:
         """Start a timer."""
-        seconds = self.seconds
-        delay = datetime.timedelta(seconds=seconds)
-        next_time = now() + delay
-        self.cancel_timer()
+
+        if not next_time:
+            seconds = self.seconds
+            delay = datetime.timedelta(seconds=seconds)
+            next_time = now() + delay
+            self.cancel_timer()
+
         self._cancel_timer = async_track_point_in_time(
             self.hass,
             HassJob(
@@ -485,6 +495,14 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         )
 
         self.track_timer(next_time, seconds, "Active")
+
+    def init_timer(self) -> None:
+        """Init timer."""
+
+        if timer_end := self._attr_extra_state_attributes.get("timer_end"):
+            seconds = int(self._attr_extra_state_attributes.get("timer_seconds", 0))
+            next_time = datetime.datetime.fromisoformat(timer_end)
+            self.schedule_timer(next_time, seconds)
 
     def cancel_timer(self) -> None:
         """Stop the timer."""
