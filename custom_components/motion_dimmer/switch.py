@@ -16,7 +16,7 @@ from homeassistant.components.light import (
 )
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_ENTITY_ID, ATTR_FRIENDLY_NAME
+from homeassistant.const import ATTR_ENTITY_ID, ATTR_FRIENDLY_NAME, ATTR_ICON
 from homeassistant.core import HassJob, HomeAssistant, State
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import (
@@ -523,6 +523,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         new_attr[ATTR_FRIENDLY_NAME] = self.hass.states.get(timer_id).attributes.get(
             ATTR_FRIENDLY_NAME
         )
+        new_attr[ATTR_ICON] = self.hass.states.get(timer_id).attributes.get(ATTR_ICON)
         self.hass.states.async_set(
             entity_id=timer_id,
             new_state=state,
