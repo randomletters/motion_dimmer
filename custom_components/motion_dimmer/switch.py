@@ -597,12 +597,11 @@ async def async_setup_entry(
     """Set up the sensor entry."""
 
     data: MotionDimmerData = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        [
-            MotionDimmerSwitch(
-                data,
-                entity_name="Motion Dimmer",
-                unique_id=internal_id(CE.CONTROL_SWITCH, data.device_id),
-            ),
-        ]
+
+    switch = MotionDimmerSwitch(
+        data,
+        entity_name="Motion Dimmer",
+        unique_id=internal_id(CE.CONTROL_SWITCH, data.device_id),
     )
+    data.switch_object = switch
+    async_add_entities([switch])

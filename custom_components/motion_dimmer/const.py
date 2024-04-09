@@ -15,6 +15,7 @@ CONF_TRIGGERS = "triggers"
 CONF_PREDICTERS = "predicters"
 
 SERVICE_ENABLE = "enable"
+SERVICE_FINISH_TIMER = "finish_timer"
 SERVICE_DISABLE = "temporarily_disable"
 SERVICE_SECONDS = "seconds"
 SERVICE_MINUTES = "minutes"

@@ -26,6 +26,7 @@ class MotionDimmerData:
     input_select: dict[str, Any]
     triggers: dict[str, Any]
     predicters: dict[str, Any]
+    switch_object: Any
 
 
 class MotionDimmerEntity(Entity):

@@ -2,6 +2,7 @@ temporarily_disable:
   target:
     entity:
       domain: datetime
+      integration: motion_dimmer
   fields:
     seconds:
       example: 120
@@ -31,3 +32,9 @@ enable:
   target:
     entity:
       domain: switch
+      integration: motion_dimmer
+finish_timer:
+  target:
+    entity:
+      domain: sensor
+      integration: motion_dimmer

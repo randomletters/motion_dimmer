@@ -17,9 +17,14 @@ from .const import (
     DOMAIN,
     SERVICE_DISABLE,
     SERVICE_ENABLE,
+    SERVICE_FINISH_TIMER,
 )
 from .models import MotionDimmerData
-from .services import async_service_enable, async_service_temporarily_disable
+from .services import (
+    async_service_enable,
+    async_service_finish_timer,
+    async_service_temporarily_disable,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,6 +50,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType):
 
     hass.services.async_register(DOMAIN, SERVICE_ENABLE, async_enable)
 
+    async def async_finish_timer(call: ServiceCall):
+        await async_service_finish_timer(hass, call)
+
+    hass.services.async_register(DOMAIN, SERVICE_FINISH_TIMER, async_finish_timer)
+
     return True
 
 
@@ -62,6 +72,7 @@ async def async_setup_entry(
         input_select=entry.options.get(CONF_INPUT_SELECT, None),
         triggers=entry.options.get(CONF_TRIGGERS, None),
         predicters=entry.options.get(CONF_PREDICTERS, None),
+        switch_object=None,
     )
 
     entry.async_on_unload(entry.add_update_listener(update_listener))
