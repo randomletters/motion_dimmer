@@ -20,12 +20,13 @@ _LOGGER = logging.getLogger(__name__)
 class MotionDimmerData:
     """Data for the motion_dimmer integration."""
 
-    device_id: dict[str, Any]
-    device_name: dict[str, Any]
-    dimmer: dict[str, Any]
-    input_select: dict[str, Any]
-    triggers: dict[str, Any]
-    predicters: dict[str, Any]
+    device_id: str
+    device_name: str
+    dimmer: str
+    input_select: str
+    triggers: list
+    predicters: list | None
+    script: str | None
     switch_object: Any
 
 

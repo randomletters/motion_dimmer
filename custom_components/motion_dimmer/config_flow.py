@@ -1,4 +1,5 @@
 """Config flow for Motion Dimmers integration."""
+
 from __future__ import annotations
 
 import logging
@@ -10,6 +11,7 @@ from homeassistant import config_entries
 from homeassistant.components.binary_sensor import DOMAIN as BINARY_SENSOR_DOMAIN
 from homeassistant.components.input_select import DOMAIN as INPUT_SELECT_DOMAIN
 from homeassistant.components.light import DOMAIN as LIGHT_DOMAIN
+from homeassistant.components.script import DOMAIN as SCRIPT_DOMAIN
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.selector import EntitySelector, EntitySelectorConfig
@@ -19,6 +21,7 @@ from .const import (
     CONF_FRIENDLY_NAME,
     CONF_INPUT_SELECT,
     CONF_PREDICTERS,
+    CONF_SCRIPT,
     CONF_TRIGGERS,
     CONF_UNIQUE_NAME,
     DOMAIN,
@@ -87,14 +90,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     ) -> FlowResult:
         """Manage the options."""
 
-        # _LOGGER.warning("User Info: {}".format(user_input))
-        # _LOGGER.warning("Config: {}".format(self.config_entry))
-
         if user_input is not None:
-            # if user_input.get("another") is None:
-            #     return await self.async_step_settings(user_input=user_input)
-            # else:
-            # _LOGGER.warning("User Info: {}".format(user_input))
             return self.async_create_entry(data=user_input)
 
         entry = self.config_entry
@@ -137,6 +133,15 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         EntitySelectorConfig(
                             domain=[BINARY_SENSOR_DOMAIN],
                             multiple=True,
+                        ),
+                    ),
+                    vol.Optional(
+                        CONF_SCRIPT,
+                        default=entry.options.get(CONF_SCRIPT, vol.UNDEFINED),
+                    ): EntitySelector(
+                        EntitySelectorConfig(
+                            domain=[SCRIPT_DOMAIN],
+                            multiple=False,
                         ),
                     ),
                 }

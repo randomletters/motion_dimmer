@@ -12,6 +12,7 @@ from .const import (
     CONF_FRIENDLY_NAME,
     CONF_INPUT_SELECT,
     CONF_PREDICTERS,
+    CONF_SCRIPT,
     CONF_TRIGGERS,
     CONF_UNIQUE_NAME,
     DOMAIN,
@@ -72,6 +73,7 @@ async def async_setup_entry(
         input_select=entry.options.get(CONF_INPUT_SELECT, None),
         triggers=entry.options.get(CONF_TRIGGERS, None),
         predicters=entry.options.get(CONF_PREDICTERS, None),
+        script=entry.options.get(CONF_SCRIPT, None),
         switch_object=None,
     )
 

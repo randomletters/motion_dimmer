@@ -13,6 +13,7 @@ CONF_DIMMER = "dimmer"
 CONF_INPUT_SELECT = "input_select"
 CONF_TRIGGERS = "triggers"
 CONF_PREDICTERS = "predicters"
+CONF_SCRIPT = "script"
 
 SENSOR_END_TIME = "end_time"
 SENSOR_DURATION = "duration"

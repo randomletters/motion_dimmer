@@ -14,6 +14,7 @@ from homeassistant.components.light import (
     ATTR_TRANSITION,
     DOMAIN as LIGHT_DOMAIN,
 )
+from homeassistant.components.script import DOMAIN as SCRIPT_DOMAIN
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_FRIENDLY_NAME, ATTR_ICON
@@ -427,9 +428,10 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         old_state: State | None,
         new_state: State | None,
     ) -> None:
-        """Register a callback for when triggers are activated."""
+        """Run when triggers are activated."""
         self._is_prediction = False
         await self.async_start_dimmer()
+        await self.async_turn_on_script()
 
     async def async_predicter_on_callback(
         self,
@@ -476,6 +478,20 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         }
         await self.hass.services.async_call(
             LIGHT_DOMAIN,
+            "turn_on",
+            args,
+        )
+
+    async def async_turn_on_script(self) -> None:
+        """Turn the script on."""
+        if not self._data.script:
+            return
+
+        args = {
+            ATTR_ENTITY_ID: self._data.script,
+        }
+        await self.hass.services.async_call(
+            SCRIPT_DOMAIN,
             "turn_on",
             args,
         )
