@@ -83,6 +83,7 @@ async def async_service_finish_timer(hass: HomeAssistant, call: ServiceCall):
     for data in get_data(hass, call).values():
         switch: MotionDimmerSwitch = data.switch_object
         await switch.async_schedule_callback()
+        switch.cancel_periodic_timer()
         switch.cancel_timer()
 
 
