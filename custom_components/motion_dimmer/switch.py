@@ -27,7 +27,14 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import slugify
 from homeassistant.util.dt import now
 
-from .const import DOMAIN, ControlEntities as CE
+from .const import (
+    DOMAIN,
+    SENSOR_ACTIVE,
+    SENSOR_DURATION,
+    SENSOR_END_TIME,
+    SENSOR_IDLE,
+    ControlEntities as CE,
+)
 from .models import MotionDimmerData, MotionDimmerEntity, internal_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -53,8 +60,8 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         self._dimmer_time_off = now()
 
         self._attr_extra_state_attributes = {
-            "timer_end": None,
-            "timer_seconds": None,
+            SENSOR_END_TIME: None,
+            SENSOR_DURATION: None,
         }
 
     async def async_added_to_hass(self) -> None:
@@ -63,11 +70,11 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         if last_state:
             value = last_state.state if last_state is not None else self._default_value
             self._attr_state = value
-            self._attr_extra_state_attributes["timer_end"] = last_state.attributes.get(
-                "timer_end"
+            self._attr_extra_state_attributes[SENSOR_END_TIME] = (
+                last_state.attributes.get(SENSOR_END_TIME)
             )
-            self._attr_extra_state_attributes["timer_seconds"] = (
-                last_state.attributes.get("timer_seconds")
+            self._attr_extra_state_attributes[SENSOR_DURATION] = (
+                last_state.attributes.get(SENSOR_DURATION)
             )
             self.init_timer()
 
@@ -474,13 +481,14 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         )
 
     def schedule_timer(
-        self, next_time: datetime.datetime | None = None, seconds: int | None = None
+        self, next_time: datetime.datetime | None = None, duration: str | None = None
     ) -> None:
         """Start a timer."""
 
         if not next_time:
             seconds = self.seconds
             delay = datetime.timedelta(seconds=seconds)
+            duration = str(delay)
             next_time = now() + delay
             self.cancel_timer()
 
@@ -494,15 +502,17 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
             next_time,
         )
 
-        self.track_timer(next_time, seconds, "Active")
+        self.track_timer(next_time, duration, SENSOR_ACTIVE)
 
     def init_timer(self) -> None:
         """Init timer."""
 
-        if timer_end := self._attr_extra_state_attributes.get("timer_end"):
-            seconds = int(self._attr_extra_state_attributes.get("timer_seconds", 0))
+        if timer_end := self._attr_extra_state_attributes.get(SENSOR_END_TIME):
+            duration = self._attr_extra_state_attributes.get(
+                SENSOR_DURATION, "00:00:00"
+            )
             next_time = datetime.datetime.fromisoformat(timer_end)
-            self.schedule_timer(next_time, seconds)
+            self.schedule_timer(next_time, duration)
 
     def cancel_timer(self) -> None:
         """Stop the timer."""
@@ -512,11 +522,13 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
 
         self.track_timer()
 
-    def track_timer(self, timer_end=now(), timer_seconds=0, state="Idle") -> None:
+    def track_timer(
+        self, timer_end=now(), duration="00:00:00", state=SENSOR_IDLE
+    ) -> None:
         """Store changes in timer data so the timer sensor can read it."""
         new_attr = {
-            "timer_end": timer_end,
-            "timer_seconds": timer_seconds,
+            SENSOR_END_TIME: timer_end,
+            SENSOR_DURATION: duration,
         }
         self._attr_extra_state_attributes = new_attr
         timer_id = self.external_id(CE.TIMER)

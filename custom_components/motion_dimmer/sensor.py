@@ -11,7 +11,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util.dt import now
 
-from .const import DOMAIN, ControlEntities
+from .const import (
+    DOMAIN,
+    SENSOR_ACTIVE,
+    SENSOR_DURATION,
+    SENSOR_END_TIME,
+    SENSOR_IDLE,
+    ControlEntities,
+)
 from .models import MotionDimmerData, MotionDimmerEntity, internal_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,8 +40,8 @@ class TimerSensor(MotionDimmerEntity, RestoreSensor):
         super().__init__(data, entity_name, unique_id)
 
         self._attr_extra_state_attributes = {
-            "timer_end": None,
-            "timer_seconds": None,
+            SENSOR_END_TIME: None,
+            SENSOR_DURATION: None,
         }
 
     async def async_update(self) -> None:
@@ -43,17 +50,17 @@ class TimerSensor(MotionDimmerEntity, RestoreSensor):
         switch_attrs = self.hass.states.get(
             self.external_id(ControlEntities.CONTROL_SWITCH)
         ).attributes
-        timer_end = switch_attrs.get("timer_end")
-        timer_seconds = switch_attrs.get("timer_seconds")
+        timer_end = switch_attrs.get(SENSOR_END_TIME)
+        timer_seconds = switch_attrs.get(SENSOR_DURATION)
         if timer_end:
             timer_end = datetime.datetime.fromisoformat(str(timer_end))
-            self._attr_extra_state_attributes["timer_end"] = timer_end
+            self._attr_extra_state_attributes[SENSOR_END_TIME] = timer_end
             if timer_end > now():
-                self._attr_native_value = "Active"
+                self._attr_native_value = SENSOR_ACTIVE
             else:
-                self._attr_native_value = "Idle"
+                self._attr_native_value = SENSOR_IDLE
 
-            self._attr_extra_state_attributes["timer_seconds"] = timer_seconds
+            self._attr_extra_state_attributes[SENSOR_DURATION] = timer_seconds
 
 
 async def async_setup_entry(

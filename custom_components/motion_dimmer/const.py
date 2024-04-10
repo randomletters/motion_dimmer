@@ -14,6 +14,11 @@ CONF_INPUT_SELECT = "input_select"
 CONF_TRIGGERS = "triggers"
 CONF_PREDICTERS = "predicters"
 
+SENSOR_END_TIME = "end_time"
+SENSOR_DURATION = "duration"
+SENSOR_IDLE = "idle"
+SENSOR_ACTIVE = "active"
+
 SERVICE_ENABLE = "enable"
 SERVICE_FINISH_TIMER = "finish_timer"
 SERVICE_DISABLE = "temporarily_disable"
