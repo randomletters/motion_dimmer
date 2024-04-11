@@ -37,4 +37,4 @@ Once configured, you can edit the entities that control the Motion Dimmer by goi
 All of these entities can be manipulated with automations and scenes to add more sophisticated functionality.  Adding these entities to groups can allow for convenient dashboards, as well.
 
 ## Timer
-Motion Dimmer also provides a sensor which tracks the timer.  The state is either “Active” or “Idle” and it has two attributes: `timer_end` and `timer_seconds`.  This can be used in conjunction with integrations like “Timer Bar Card” to display a countdown timer in dashboards.
+Motion Dimmer also provides a sensor which tracks the timer.  The state and attributes can be used in conjunction with the  “Timer Bar Card” custom integration to display a countdown timer in dashboards.
