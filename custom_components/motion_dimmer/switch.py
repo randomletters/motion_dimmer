@@ -349,6 +349,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
                 self.add_time()
                 self.schedule_timer()
                 self.schedule_periodic_timer()
+                await self.async_turn_on_script()
 
     async def async_stop_dimmer(self) -> None:
         """Turn off the dimmer."""
@@ -431,7 +432,6 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         """Run when triggers are activated."""
         self._is_prediction = False
         await self.async_start_dimmer()
-        await self.async_turn_on_script()
 
     async def async_predicter_on_callback(
         self,
