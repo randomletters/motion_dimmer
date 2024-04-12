@@ -349,7 +349,8 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
                 self.add_time()
                 self.schedule_timer()
                 self.schedule_periodic_timer()
-                await self.async_turn_on_script()
+                if self._dimmer_previous_state == "off":
+                    await self.async_turn_on_script()
 
     async def async_stop_dimmer(self) -> None:
         """Turn off the dimmer."""
