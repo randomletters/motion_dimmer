@@ -414,6 +414,9 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
 
         # Only set a new disable if it is later than the old one.
         if self.disabled_until < next_time:
+            # Schedule the timer to turn off dimmer after it is reenabled.
+            buffer = datetime.timedelta(seconds=5)
+            self.schedule_timer(next_time + buffer, str(int(seconds) + 5))
             await self.hass.services.async_call(
                 DATETIME_DOMAIN,
                 "set_value",
