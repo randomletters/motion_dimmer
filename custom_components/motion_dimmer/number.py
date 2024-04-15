@@ -31,10 +31,13 @@ class MotionDimmerNumber(MotionDimmerEntity, RestoreNumber):
         self._default_value = default_value
         self._attr_native_min_value = min_value
 
-    async def async_set_native_value(self, value: float) -> None:
-        """Update the current value."""
+    def set_value(self, value: float) -> None:
+        """Set new value."""
+        self._attr_value = int(value)
+
+    def set_native_value(self, value: float) -> None:
+        """Set new value."""
         self._attr_native_value = int(value)
-        self.async_write_ha_state()
 
     async def async_added_to_hass(self) -> None:
         """Restore last state."""

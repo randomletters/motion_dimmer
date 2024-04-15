@@ -1,4 +1,5 @@
 """Platform for datetime integration."""
+
 from __future__ import annotations
 
 import datetime

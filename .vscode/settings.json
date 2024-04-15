@@ -1,0 +1,6 @@
+{
+  "python.analysis.extraPaths": [
+    "/usr/src/homeassistant",
+    "/usr/local/lib/python3.12/site-packages/pytest_homeassistant_custom_component"
+  ]
+}

@@ -1,0 +1,60 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+logger:
+  default: info
+  logs:
+    homeassistant.components.cloud: debug
+
+
+homeassistant: !include homeassistant.yaml
+
+
+input_boolean:
+  kitchen_island:
+    name: Kitchen Island
+  kitchen_nook:
+    name: Kitchen Nook
+
+input_select:
+  day_segment:
+    name: Day Segments
+    initial: Day
+    options:
+      - Day
+      - Night
+      - Sleeping
+
+template:
+  - binary_sensor:
+    - name: Kitchen Island Motion
+      state: "{{states('input_boolean.kitchen_island')}}"
+    - name: Kitchen Nook Motion
+      state: "{{states('input_boolean.kitchen_nook')}}"
+
+light:
+  - platform: template
+    lights:
+      kitchen_island:
+        friendly_name: "Kitchen Island"
+        supports_transition_template: "{{ true }}"
+        set_temperature:
+        set_rgb:
+        turn_on:
+        turn_off:
+        set_level:
+      kitchen_nook:
+        friendly_name: "Kitchen Nook"
+        turn_on:
+        turn_off:
+        set_level:
+
