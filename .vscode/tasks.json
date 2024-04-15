@@ -32,6 +32,21 @@
         "panel": "new"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Pytest Coverage",
+      "type": "shell",
+      "command": "python3 -m pytest --cov-report term --cov=custom_components/motion_dimmer/ tests/",
+      "dependsOn": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
     }
   ]
 }
