@@ -69,8 +69,9 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         """Restore last state."""
         last_state = await self.async_get_last_state()
         if last_state:
-            value = last_state.state if last_state is not None else self._default_value
-            self._attr_state = value
+            self._attr_state = (
+                last_state.state if last_state.state else self._default_value
+            )
             self._attr_extra_state_attributes[SENSOR_END_TIME] = (
                 last_state.attributes.get(SENSOR_END_TIME)
             )
@@ -78,6 +79,8 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
                 last_state.attributes.get(SENSOR_DURATION)
             )
             self.init_timer()
+        else:
+            self._attr_state = "on"
 
         # Add dimmer on listener
         if self._data.dimmer:
@@ -140,7 +143,10 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         """The datetime when the motion dimmer is no longer disabled."""
         state = self.hass.states.get(self.external_id(CE.DISABLED_UNTIL))
         if state:
-            return datetime.datetime.fromisoformat(str(state.state))
+            try:
+                return datetime.datetime.fromisoformat(str(state.state))
+            except ValueError:
+                return now()
 
     @property
     def brightness(self) -> float:
