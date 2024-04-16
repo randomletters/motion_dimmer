@@ -3,7 +3,8 @@
   // "context": "..",
   "image": "homeassistant/home-assistant:2024.4",
   "appPort": [
-    "8123:8123"
+    "8123:8123",
+    "9000:9000"
   ],
   "postCreateCommand": "scripts/setup",
   // "postStartCommand": "scripts/bootstrap",

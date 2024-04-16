@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import datetime
+from datetime import datetime, timedelta
 import logging
 from typing import Any
 
@@ -59,7 +59,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         self._additional_time = 0
         self._dimmer_time_on = now()
         self._dimmer_time_off = now()
-
+        self._attr_force_update = True
         self._attr_extra_state_attributes = {
             SENSOR_END_TIME: None,
             SENSOR_DURATION: None,
@@ -78,7 +78,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
             self._attr_extra_state_attributes[SENSOR_DURATION] = (
                 last_state.attributes.get(SENSOR_DURATION)
             )
-            self.init_timer()
+            await self.async_init_timer()
         else:
             self._attr_state = "on"
 
@@ -144,7 +144,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         state = self.hass.states.get(self.external_id(CE.DISABLED_UNTIL))
         if state:
             try:
-                return datetime.datetime.fromisoformat(str(state.state))
+                return datetime.fromisoformat(str(state.state))
             except ValueError:
                 return now()
 
@@ -353,7 +353,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
                     self.reset_dimmer_time_on()
 
                 self.add_time()
-                self.schedule_timer()
+                await self.async_schedule_timer()
                 self.schedule_periodic_timer()
                 if self._dimmer_previous_state == "off":
                     await self.async_turn_on_script()
@@ -368,7 +368,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
                 await self.async_start_dimmer()
             else:
                 self._is_prediction = False
-                self.cancel_timer()
+                await self.async_cancel_timer()
                 self.cancel_periodic_timer()
                 await self.hass.services.async_call(
                     LIGHT_DOMAIN,
@@ -414,7 +414,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         """Disable all functionality for a time."""
         seconds = self.hass.states.get(self.external_id(CE.MANUAL_OVERRIDE)).state
         if seconds and int(seconds) > 0:
-            delay = datetime.timedelta(seconds=int(seconds))
+            delay = timedelta(seconds=int(seconds))
             next_time = now() + delay
         else:
             return
@@ -422,8 +422,12 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         # Only set a new disable if it is later than the old one.
         if self.disabled_until < next_time:
             # Schedule the timer to turn off dimmer after it is reenabled.
-            buffer = datetime.timedelta(seconds=5)
-            self.schedule_timer(next_time + buffer, str(int(seconds) + 5))
+            buffer = timedelta(seconds=5)
+            await self.async_schedule_timer(
+                next_time + buffer,
+                str(timedelta(seconds=int(seconds) + 5)),
+            )
+
             await self.hass.services.async_call(
                 DATETIME_DOMAIN,
                 "set_value",
@@ -471,7 +475,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
     async def async_schedule_callback(self, *args: Any) -> None:
         """Turn off the dimmer because timer ran out."""
         await self.async_stop_dimmer()
-        self.track_timer()
+        await self.async_track_timer()
 
     async def async_periodic_callback(self, *args: Any) -> None:
         """Repeatedly check the triggers to reset the timer."""
@@ -506,17 +510,17 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
             args,
         )
 
-    def schedule_timer(
-        self, next_time: datetime.datetime | None = None, duration: str | None = None
+    async def async_schedule_timer(
+        self, next_time: datetime | None = None, duration: str | None = None
     ) -> None:
         """Start a timer."""
 
         if not next_time:
             seconds = self.seconds
-            delay = datetime.timedelta(seconds=seconds)
+            delay = timedelta(seconds=seconds)
             duration = str(delay)
             next_time = now() + delay
-            self.cancel_timer()
+            await self.async_cancel_timer()
 
         self._cancel_timer = async_track_point_in_time(
             self.hass,
@@ -528,35 +532,37 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
             next_time,
         )
 
-        self.track_timer(next_time, duration, SENSOR_ACTIVE)
+        await self.async_track_timer(next_time, duration, SENSOR_ACTIVE)
 
-    def init_timer(self) -> None:
+    async def async_init_timer(self) -> None:
         """Init timer."""
 
         if timer_end := self._attr_extra_state_attributes.get(SENSOR_END_TIME):
             duration = self._attr_extra_state_attributes.get(
                 SENSOR_DURATION, "00:00:00"
             )
-            next_time = datetime.datetime.fromisoformat(timer_end)
-            self.schedule_timer(next_time, duration)
+            next_time = datetime.fromisoformat(timer_end)
+            await self.async_schedule_timer(next_time, duration)
 
-    def cancel_timer(self) -> None:
+    async def async_cancel_timer(self) -> None:
         """Stop the timer."""
         if self._cancel_timer is not None:
             self._cancel_timer()
             self._cancel_timer = None
 
-        self.track_timer()
+        await self.async_track_timer()
 
-    def track_timer(
+    async def async_track_timer(
         self, timer_end=now(), duration="00:00:00", state=SENSOR_IDLE
     ) -> None:
         """Store changes in timer data so the timer sensor can read it."""
         new_attr = {
-            SENSOR_END_TIME: timer_end,
-            SENSOR_DURATION: duration,
+            SENSOR_END_TIME: timer_end.isoformat(),
+            SENSOR_DURATION: str(duration),
         }
         self._attr_extra_state_attributes = new_attr
+        await self.async_update_ha_state(True)
+        # await self.hass.async_block_till_done()
         timer_id = self.external_id(CE.TIMER)
         new_attr[ATTR_FRIENDLY_NAME] = self.hass.states.get(timer_id).attributes.get(
             ATTR_FRIENDLY_NAME
@@ -580,7 +586,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         if trigger_interval == 0:
             return
 
-        delay = datetime.timedelta(seconds=trigger_interval)
+        delay = timedelta(seconds=trigger_interval)
         next_time = now() + delay
         self.cancel_periodic_timer()
         self._cancel_periodic_timer = async_track_point_in_time(
@@ -595,7 +601,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
 
     def schedule_pump_timer(self) -> None:
         """Pump the dimmer for a short time."""
-        delay = datetime.timedelta(seconds=1)
+        delay = timedelta(seconds=1)
         next_time = now() + delay
         async_track_point_in_time(
             self.hass,
