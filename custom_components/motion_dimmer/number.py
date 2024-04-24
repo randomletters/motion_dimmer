@@ -9,7 +9,17 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, ControlEntities
+from .const import (
+    DEFAULT_EXTENSION_MAX,
+    DEFAULT_MANUAL_OVERRIDE,
+    DEFAULT_MIN_BRIGHTNESS,
+    DEFAULT_PREDICTION_BRIGHTNESS,
+    DEFAULT_PREDICTION_SECS,
+    DEFAULT_SEG_SECONDS,
+    DEFAULT_TRIGGER_INTERVAL,
+    DOMAIN,
+    ControlEntities,
+)
 from .models import MotionDimmerData, MotionDimmerEntity, internal_id, segments
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,10 +40,6 @@ class MotionDimmerNumber(MotionDimmerEntity, RestoreNumber):
         super().__init__(data, entity_name, unique_id)
         self._default_value = default_value
         self._attr_native_min_value = min_value
-
-    def set_value(self, value: float) -> None:
-        """Set new value."""
-        self._attr_value = int(value)
 
     def set_native_value(self, value: float) -> None:
         """Set new value."""
@@ -84,26 +90,26 @@ async def async_setup_entry(
             data,
             entity_name="Min. Brightness",
             unique_id=internal_id(ControlEntities.MIN_BRIGHTNESS, data.device_id),
-            default_value=1,
+            default_value=DEFAULT_MIN_BRIGHTNESS,
         ),
         TimeNumber(
             data,
             entity_name="Trigger Test Interval",
             unique_id=internal_id(ControlEntities.TRIGGER_INTERVAL, data.device_id),
-            default_value=60,
+            default_value=DEFAULT_TRIGGER_INTERVAL,
         ),
         TimeNumber(
             data,
             entity_name="Max. Extension",
             unique_id=internal_id(ControlEntities.EXTENSION_MAX, data.device_id),
-            default_value=60 * 60,
-            min_value=1,
+            default_value=DEFAULT_EXTENSION_MAX,
+            min_value=0,
         ),
         TimeNumber(
             data,
             entity_name="Manual Override Time",
             unique_id=internal_id(ControlEntities.MANUAL_OVERRIDE, data.device_id),
-            default_value=60 * 10,
+            default_value=DEFAULT_MANUAL_OVERRIDE,
             min_value=0,
         ),
     ]
@@ -114,7 +120,7 @@ async def async_setup_entry(
                 data,
                 entity_name="Prediction Time",
                 unique_id=internal_id(ControlEntities.PREDICTION_SECS, data.device_id),
-                default_value=10,
+                default_value=DEFAULT_PREDICTION_SECS,
                 min_value=1,
             )
         )
@@ -125,7 +131,7 @@ async def async_setup_entry(
                 unique_id=internal_id(
                     ControlEntities.PREDICTION_BRIGHTNESS, data.device_id
                 ),
-                default_value=50,
+                default_value=DEFAULT_PREDICTION_BRIGHTNESS,
             )
         )
 
@@ -139,7 +145,7 @@ async def async_setup_entry(
                 unique_id=internal_id(
                     ControlEntities.SEG_SECONDS, data.device_id, seg_id
                 ),
-                default_value=60,
+                default_value=DEFAULT_SEG_SECONDS,
                 min_value=1,
             )
         )

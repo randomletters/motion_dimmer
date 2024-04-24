@@ -92,7 +92,7 @@ def get_data(hass: HomeAssistant, call: ServiceCall) -> dict[str, MotionDimmerDa
 
     target = ServiceTargetSelector(call)
     if not target.has_any_selector:
-        return
+        return  # pragma: no cover
 
     data: dict[str, MotionDimmerData] = {}
     entity_reg = er.async_get(hass)

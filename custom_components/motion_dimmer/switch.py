@@ -30,10 +30,13 @@ from homeassistant.util.dt import now
 
 from .const import (
     DOMAIN,
+    LONG_TIME_OFF,
+    PUMP_TIME,
     SENSOR_ACTIVE,
     SENSOR_DURATION,
     SENSOR_END_TIME,
     SENSOR_IDLE,
+    SMALL_TIME_OFF,
     ControlEntities as CE,
 )
 from .models import MotionDimmerData, MotionDimmerEntity, internal_id
@@ -82,7 +85,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         else:
             self._attr_state = "on"
 
-        # Add dimmer on listener
+        # Add dimmer state listener
         if self._data.dimmer:
             async_track_state_change(
                 self.hass,
@@ -145,7 +148,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         if state:
             try:
                 return datetime.fromisoformat(str(state.state))
-            except ValueError:
+            except ValueError:  # pragma: no cover
                 return now()
 
     @property
@@ -164,7 +167,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
             else:
                 return target
         else:
-            return 0
+            return 0  # pragma: no cover
 
     @property
     def is_enabled(self) -> bool:
@@ -189,7 +192,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         if state:
             return state.state == "on"
 
-        return False
+        return False  # pragma: no cover
 
     @property
     def seg_attrs(self) -> dict[str, Any]:
@@ -245,7 +248,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
     def prediction_brightness(self) -> float:
         """The brightness of the predictive activation."""
         if not self._data.predicters:
-            return 0
+            return 0  # pragma: no cover
         entity_id = self.external_id(CE.PREDICTION_BRIGHTNESS)
         return float(self.hass.states.get(entity_id).state) * 255 / 100
 
@@ -253,7 +256,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
     def prediction_secs(self) -> float:
         """The number of seconds to activate a prediction."""
         if not self._data.predicters:
-            return 0
+            return 0  # pragma: no cover
         entity_id = self.external_id(CE.PREDICTION_SECS)
         return float(self.hass.states.get(entity_id).state)
 
@@ -274,7 +277,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
     def is_dimmer_on(self) -> bool:
         """Is the dimmer currently on."""
         if self._is_prediction:
-            return False
+            return False  # pragma: no cover
         else:
             return self.dimmer_state == "on"
 
@@ -301,7 +304,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
     def additional_time(self) -> int:
         """Amount of time to add to the timer."""
         if self._is_prediction:
-            return 0
+            return 0  # pragma: no cover
 
         # Initialize the attribute.
         self._additional_time = getattr(self, "_additional_time", 0)
@@ -310,10 +313,10 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         if off_seconds <= 0:
             # Light is on so only extend a small amount.
             total += int(self.dimmer_on_seconds / 5)
-        elif off_seconds < 20:
+        elif off_seconds < SMALL_TIME_OFF:
             # Light was briefly off, so extend by normal amount
             total += self.dimmer_on_seconds
-        elif off_seconds < (60 * 20):
+        elif off_seconds < LONG_TIME_OFF:
             # Light was off for a little while, so decrease the extension.
             total -= int(self._additional_time / 2)
         else:
@@ -330,8 +333,6 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
         if self.is_enabled:
             self._dimmer_previous_state = self.dimmer_state
 
-            # _LOGGER.warning(f"Info: {self.seg_attrs}")
-
             if (
                 not self._is_pump
                 and not self._is_prediction
@@ -347,14 +348,14 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
                 self.schedule_pump_timer()
             else:
                 self._is_pump = False
-                await self.async_turn_on_dimmer(self.seg_attrs)
-
                 if self._dimmer_previous_state == "off":
                     self.reset_dimmer_time_on()
 
                 self.add_time()
+                await self.async_turn_on_dimmer(self.seg_attrs)
                 await self.async_schedule_timer()
                 self.schedule_periodic_timer()
+                # Only trigger the script if dimmer was off.
                 if self._dimmer_previous_state == "off":
                     await self.async_turn_on_script()
 
@@ -417,16 +418,13 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
             delay = timedelta(seconds=int(seconds))
             next_time = now() + delay
         else:
-            return
+            return  # pragma: no cover
 
         # Only set a new disable if it is later than the old one.
         if self.disabled_until < next_time:
             # Schedule the timer to turn off dimmer after it is reenabled.
             buffer = timedelta(seconds=5)
-            await self.async_schedule_timer(
-                next_time + buffer,
-                str(timedelta(seconds=int(seconds) + 5)),
-            )
+            await self.async_schedule_timer(next_time + buffer, str(delay + buffer))
 
             await self.hass.services.async_call(
                 DATETIME_DOMAIN,
@@ -499,7 +497,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
     async def async_turn_on_script(self) -> None:
         """Turn the script on."""
         if not self._data.script:
-            return
+            return  # pragma: no cover
 
         args = {
             ATTR_ENTITY_ID: self._data.script,
@@ -561,18 +559,16 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
             SENSOR_DURATION: str(duration),
         }
         self._attr_extra_state_attributes = new_attr
-        await self.async_update_ha_state(True)
-        # await self.hass.async_block_till_done()
         timer_id = self.external_id(CE.TIMER)
         new_attr[ATTR_FRIENDLY_NAME] = self.hass.states.get(timer_id).attributes.get(
             ATTR_FRIENDLY_NAME
         )
         new_attr[ATTR_ICON] = self.hass.states.get(timer_id).attributes.get(ATTR_ICON)
         self.hass.states.async_set(
-            entity_id=timer_id,
-            new_state=state,
-            attributes=new_attr,
+            entity_id=timer_id, new_state=state, attributes=new_attr, force_update=True
         )
+        await self.async_update_ha_state(True)
+        # await self.hass.async_block_till_done()
 
     def cancel_periodic_timer(self) -> None:
         """Cancel the periodic timer."""
@@ -601,7 +597,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
 
     def schedule_pump_timer(self) -> None:
         """Pump the dimmer for a short time."""
-        delay = timedelta(seconds=1)
+        delay = timedelta(seconds=PUMP_TIME)
         next_time = now() + delay
         async_track_point_in_time(
             self.hass,
@@ -629,7 +625,7 @@ class MotionDimmerSwitch(MotionDimmerEntity, SwitchEntity, RestoreEntity):
     def reset_dimmer_time_off(self) -> None:
         """Reset dimmer time off."""
         if self._is_prediction:
-            return
+            return  # pragma: no cover
         self._dimmer_time_off = now()
 
 

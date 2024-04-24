@@ -20,7 +20,7 @@ async def test_form(hass):  # , connect):
     assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["errors"] == {}
 
-    # with PATCH_SETUP_ENTRY as mock_setup_entry:
+    # with MOCK_CONFIG as mock_setup_entry:
     result2 = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input=MOCK_CONFIG
     )

@@ -21,7 +21,7 @@
     {
       "label": "Pytest",
       "type": "shell",
-      "command": "python3 -m pytest --timeout=10 tests",
+      "command": "python3 -m pytest -vv --timeout=10 tests",
       "dependsOn": [],
       "group": {
         "kind": "test",

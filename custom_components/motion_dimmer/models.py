@@ -46,8 +46,6 @@ class MotionDimmerEntity(Entity):
         self._data = data
         self._attr_name = entity_name
         self._attr_unique_id = unique_id if unique_id else entity_id
-        if entity_id:
-            self.entity_id = entity_id
 
         device_id = data.device_id
         self._device = device_id
