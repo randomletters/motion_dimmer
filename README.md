@@ -42,10 +42,10 @@ All of these entities can be manipulated with automations and scenes to add more
 
 ## Services
 
-Motion dimmer provides 3 services:
+Motion Dimmer provides 3 services:
 
-- `temporarily_disable`: Disables the Motion Dimmer for a short time. Uses the default time if `hours` `minutes` or `seconds` are not specified. This is much easier than home assistant date math templates.
-- `enable`: Reenables a Motion Dimmer by resetting the temporariyly deisabled field.
+- `temporarily_disable`: Disables the Motion Dimmer for a short time. Uses the default time if **hours** **minutes** or **seconds** are not specified. This is much easier than home assistant date math templates.
+- `enable`: Reenables a Motion Dimmer by resetting the temporariyly disabled field.
 - `finish_timer`: Ends the Motion Dimmer timer early, causing the dimmer to turn off if the trigger is not active.
 
 ## Timer
