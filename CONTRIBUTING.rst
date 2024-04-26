@@ -44,9 +44,8 @@ Request features on the `Issue Tracker`_.
 How to set up your development environment
 ------------------------------------------
 
-You need Python 3.7+ and the following tools:
+You need Python and the following tools:
 
-- Nox_
 - Docker_
 - `Visual Studio Code`_
 
@@ -55,7 +54,6 @@ and clone the fork to your local machine. You can now generate a project
 from your development version:
 
 .. _Docker: https://www.docker.com/
-.. _Nox: https://nox.thea.codes/
 .. _Visual Studio Code: https://code.visualstudio.com/
 .. _Github: https://github.com/randomletters/motion_dimmer
 
@@ -63,11 +61,9 @@ from your development version:
 How to test the project
 -----------------------
 
-You can run pre-commit or pytest suite manually
-and you can ensure the integration generated is working in Home Assistant
-when launched by Visual Studio Code in a devcontainer.
-
-Please refer to the ``CONTRIBUTING.rst`` file for detailed instructions on testing.
+You can run pytest suite manually and you can ensure the integration
+generated is working in Home Assistant when launched by Visual Studio
+Code in a devcontainer.
 
 
 How to submit changes
@@ -77,12 +73,8 @@ Open a `pull request`_ to submit changes to this project.
 
 Your pull request needs to meet the following guidelines for acceptance:
 
-- The Nox test suite must pass without errors and warnings.
 - Include unit tests. This project maintains 100% code coverage.
 - If your changes add functionality, update the documentation accordingly.
-
-Feel free to submit early, though—we can always iterate on this.
-
 
 It is recommended to open an issue before starting work on anything.
 This will allow a chance to talk it over with the owners and validate your approach.

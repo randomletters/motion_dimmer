@@ -76,7 +76,7 @@ class MotionDimmerLight(MotionDimmerEntity, LightEntity, RestoreEntity):
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    """Set up Abode light devices."""
+    """Set up light devices."""
     data: MotionDimmerData = hass.data[DOMAIN][entry.entry_id]
 
     segs = segments(hass, entry)
