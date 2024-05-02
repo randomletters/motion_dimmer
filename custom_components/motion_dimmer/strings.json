@@ -1,37 +1,64 @@
 {
-  "config": {
-      "abort": {
-          "already_configured": "Device is already configured"
-      },
-      "error": {
-      },
-      "step": {
-          "user": {
-              "data": {
-                  "friendly_name": "Friendly Name",
-                  "unique_name": "Unique Id"
-              }
-          }
-      }
-  },
-  "options": {
-      "step": {
-          "init": {
-              "data": {
-                  "dimmer": "Dimmer",
-                  "input_select": "Dropdown Helper (Input Select)",
-                  "triggers": "Triggers",
-                  "predicters": "Predicters",
-                  "script": "Script"
-              },
-              "data_description": {
-                  "dimmer": "The dimmer that will be controlled.",
-                  "input_select": "The dropdown helper that defines the options.",
-                  "triggers": "The entities that will activate the dimmer.",
-                  "predicters": "The entities that predict activation.",
-                  "script": "The script that runs when the dimmer is triggered."
-              }
-          }
-      }
-  }
+    "config": {
+        "abort": {
+            "already_configured": "Device is already configured"
+        },
+        "error": {},
+        "step": {
+            "user": {
+                "data": {
+                    "friendly_name": "Friendly Name",
+                    "unique_name": "Unique Id"
+                }
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "dimmer": "Dimmer",
+                    "input_select": "Dropdown Helper (Input Select)",
+                    "triggers": "Triggers",
+                    "predicters": "Predicters",
+                    "script": "Script"
+                },
+                "data_description": {
+                    "dimmer": "The dimmer that will be controlled.",
+                    "input_select": "The dropdown helper that defines the options.",
+                    "triggers": "The entities that will activate the dimmer.",
+                    "predicters": "The entities that predict activation.",
+                    "script": "The script that runs when the dimmer is triggered."
+                }
+            }
+        }
+    },
+    "services": {
+        "temporarily_disable": {
+            "name": "temporarily_disable",
+            "description": "Disables the Motion Dimmer temporarily.",
+            "fields": {
+                "hours": {
+                    "description": "The number of hours to disable the Motion Dimmer.",
+                    "name": "hours"
+                },
+                "minutes": {
+                    "description": "The number of minutes to disable the Motion Dimmer.",
+                    "name": "minutes"
+                },
+                "seconds": {
+                    "description": "The number of seconds to disable the Motion Dimmer.",
+                    "name": "seconds"
+                }
+            }
+        },
+        "enable": {
+            "name": "enable",
+            "description": "Enables a disabled Motion Dimmer by resetting the 'Disabled Until' field."
+        },
+        "finish_timer": {
+            "name": "finish_timer",
+            "description": "Stops a running timer and turns off the dimmer if triggers are not still active."
+        }
+    }
 }

@@ -1,7 +1,7 @@
 {
   "name": "Home Assistant Custom Component Motion Dimmer",
   // "context": "..",
-  "image": "homeassistant/home-assistant:2024.4",
+  "image": "homeassistant/home-assistant:dev",
   "appPort": [
     "8123:8123",
     "9000:9000"
