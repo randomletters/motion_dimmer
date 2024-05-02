@@ -25,6 +25,7 @@ from tests import (
     get_disable_delta,
     setup_integration,
     advance_time,
+    turn_off_trigger,
     turn_on_segment,
     trigger_motion_dimmer,
     get_timer_duration,
@@ -43,7 +44,7 @@ _LOGGER = logging.getLogger(__name__)
 async def test_services(hass: HomeAssistant):
     """Test the integration setup."""
     with freeze_time(utcnow()) as frozen_time:
-        await setup_integration(hass)
+        config_entry = await setup_integration(hass)
 
         # Fire the disable_until service with no time specified.
         disable_id = external_id(hass, ControlEntities.DISABLED_UNTIL, CONFIG_NAME)
@@ -65,7 +66,7 @@ async def test_services(hass: HomeAssistant):
 
         # Get the device id from one of the entities.
         entity_reg = er.async_get(hass)
-        entries = er.async_entries_for_config_entry(entity_reg, "1")
+        entries = er.async_entries_for_config_entry(entity_reg, config_entry.entry_id)
         device_id = entries[0].device_id
 
         # Call the enable service (using device id for coverage).
@@ -81,7 +82,8 @@ async def test_services(hass: HomeAssistant):
 
         # Trigger dimmer and make sure the timer is running.
         await turn_on_segment(hass)
-        await trigger_motion_dimmer(hass)
+        await trigger_motion_dimmer(hass, frozen_time)
+        await turn_off_trigger(hass, frozen_time)
         assert await get_timer_duration(hass) > 0
 
         # Call the finish_timer service.
@@ -90,4 +92,3 @@ async def test_services(hass: HomeAssistant):
 
         # Timer is no longer running.
         assert await get_timer_duration(hass) <= 1
-        await advance_time(hass, 60, frozen_time)

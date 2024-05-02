@@ -29,14 +29,13 @@ _LOGGER = logging.getLogger(__name__)
 class MotionDimmerLight(MotionDimmerEntity, LightEntity, RestoreEntity):
     """Representation of a Motion Dimmer light."""
 
-    _attr_brightness: int | None = None
-    _attr_color_mode = ColorMode.RGB
+    _attr_brightness: int | None = 255
+    _attr_color_mode = ColorMode.WHITE
     _attr_supported_color_modes = [ColorMode.COLOR_TEMP, ColorMode.RGB, ColorMode.WHITE]
     _attr_supported_features = LightEntityFeature(LightEntityFeature.TRANSITION)
 
-    def turn_on(self, **kwargs: Any) -> None:
+    async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the light."""
-
         self._attr_is_on = True
         self._attr_state = "on"
         self._attr_brightness = kwargs.get(ATTR_BRIGHTNESS, self._attr_brightness)
@@ -47,14 +46,17 @@ class MotionDimmerLight(MotionDimmerEntity, LightEntity, RestoreEntity):
             self._attr_color_mode = ColorMode.COLOR_TEMP
             self._attr_color_temp = kwargs.get(ATTR_COLOR_TEMP, self._attr_color_temp)
         if kwargs.get(ATTR_WHITE):
+            self._attr_brightness = kwargs.get(ATTR_WHITE)
             self._attr_color_mode = ColorMode.WHITE
             self._attr_color_temp = None
             self._attr_rgb_color = None
+        self.async_write_ha_state()
 
-    def turn_off(self, **kwargs: Any) -> None:
+    async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the light."""
         self._attr_is_on = False
         self._attr_state = "off"
+        self.async_write_ha_state()
 
     @property
     def is_on(self) -> bool:
@@ -64,13 +66,15 @@ class MotionDimmerLight(MotionDimmerEntity, LightEntity, RestoreEntity):
     async def async_added_to_hass(self) -> None:
         """Restore last state."""
         last_state = await self.async_get_last_state()
-        self._attr_state = "off" if last_state is None else last_state.state
+        self._attr_state = "on" if last_state is None else last_state.state
         self._attr_is_on = self._attr_state == "on"
         if last_state:
             self._attr_color_mode = last_state.attributes.get(ATTR_COLOR_MODE)
             self._attr_brightness = last_state.attributes.get(ATTR_BRIGHTNESS)
             self._attr_rgb_color = last_state.attributes.get(ATTR_RGB_COLOR)
             self._attr_color_temp = last_state.attributes.get(ATTR_COLOR_TEMP)
+
+        await self.async_update_ha_state(True)
 
 
 async def async_setup_entry(

@@ -11,9 +11,9 @@ script: !include scripts.yaml
 scene: !include scenes.yaml
 
 logger:
-  default: warning
+  default: error
   logs:
-    homeassistant.components.cloud: debug
+    homeassistant.components.cloud: error
 
 
 homeassistant: !include homeassistant.yaml

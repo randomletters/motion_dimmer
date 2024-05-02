@@ -36,7 +36,7 @@
     {
       "label": "Pytest Coverage",
       "type": "shell",
-      "command": "python3 -m pytest --cov-report term-missing --cov=custom_components/motion_dimmer/ tests/",
+      "command": "python3 -m pytest -x --cov-report term-missing --cov=custom_components/motion_dimmer/ tests/",
       "dependsOn": [],
       "group": {
         "kind": "test",
