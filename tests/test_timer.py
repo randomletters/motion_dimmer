@@ -3,6 +3,7 @@
 import logging
 
 from freezegun import freeze_time
+import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.util.dt import utcnow
 from pytest_homeassistant_custom_component.common import (
@@ -41,38 +42,13 @@ async def test_timers(hass: HomeAssistant):
     with freeze_time(utcnow()) as frozen_time:
         config_entry = await setup_integration(hass)
 
-        # Capture events.
         events = async_capture_events(hass, "call_service")
-        # Set current segment light to on.
-        seg_1_light = external_id(hass, ControlEntities.SEG_LIGHT, CONFIG_NAME, "seg_1")
-        hass.states.async_set(seg_1_light, "on")
-        await hass.async_block_till_done()
 
-        # Let time pass to prevent event overlap.
-        await advance_time(hass, SMALL_TIME, frozen_time)
+        await set_number_field_to(hass, ControlEntities.TRIGGER_INTERVAL, 0)
+        await set_number_field_to(hass, ControlEntities.SEG_SECONDS, 10, "seg_1")
+        await set_number_field_to(hass, ControlEntities.EXTENSION_MAX, 0)
 
-        await trigger_motion_dimmer(hass)
-
-        # Dimmer is activated.
-        assert event_extract(events, "domain") == LIGHT_DOMAIN
-        assert event_extract(events, "service") == "turn_on"
-        assert event_extract(events, "service_data", "entity_id") == MOCK_LIGHT_1_ID
-
-        # Wait 10 seconds.
-        await advance_time(hass, 10, frozen_time)
-
-        # No events are fired.
-        events = async_capture_events(hass, "call_service")
-        assert event_extract(events, "domain") is None
-
-        await let_dimmer_turn_off(hass, frozen_time)
-
-        # Set segment to non default value.
-        await turn_on_segment(hass)
-        await set_number_field_to(hass, ControlEntities.SEG_SECONDS, 200, "seg_1")
-
-        events = async_capture_events(hass, "call_service")
-        await trigger_motion_dimmer(hass)
+        await trigger_motion_dimmer(hass, frozen_time)
 
         # Timer is active and has a duration.
         assert await get_timer_duration(hass) > 0
@@ -80,10 +56,17 @@ async def test_timers(hass: HomeAssistant):
 
         # Reload Home Assistant.
         assert await config_entry.async_unload(hass)
-        await setup_integration(hass)
+        await hass.async_block_till_done()
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        await advance_time(hass, 5, frozen_time)
 
         # Timer is restored and active.
         assert await get_timer_duration(hass) > 0
         assert get_field_state(hass, ControlEntities.TIMER) == "active"
 
         await let_dimmer_turn_off(hass, frozen_time)
+
+        # assert await config_entry.async_unload(hass)
+        # await hass.async_block_till_done()

@@ -18,7 +18,6 @@ from .const import (
     ControlEntities as CE,
 )
 from .models import MotionDimmerData, external_id
-from .switch import MotionDimmerSwitch
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -77,14 +76,13 @@ async def async_service_enable(hass: HomeAssistant, call: ServiceCall):
         )
 
 
-async def async_service_finish_timer(hass: HomeAssistant, call: ServiceCall):
+def service_finish_timer(hass: HomeAssistant, call: ServiceCall):
     """Handle the service call."""
 
     for data in get_data(hass, call).values():
-        switch: MotionDimmerSwitch = data.switch_object
-        await switch.async_schedule_callback()
-        switch.cancel_periodic_timer()
-        await switch.async_cancel_timer()
+        data.motion_dimmer.timer_callback()
+        data.motion_dimmer.adapter.cancel_periodic_timer()
+        data.motion_dimmer.adapter.cancel_timer()
 
 
 def get_data(hass: HomeAssistant, call: ServiceCall) -> dict[str, MotionDimmerData]:

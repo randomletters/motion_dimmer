@@ -33,6 +33,11 @@ from .const import (
     SWITCH_DOMAIN,
 )
 
+from pytest_homeassistant_custom_component.common import (
+    async_capture_events,
+    mock_state_change_event,
+)
+
 _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.ERROR, force=True)
 
@@ -40,12 +45,13 @@ logging.basicConfig(level=logging.ERROR, force=True)
 async def test_light_settings(hass: HomeAssistant):
     """Test changing light settings."""
     with freeze_time(utcnow()) as frozen_time:
-        await setup_integration(hass)
+        config_entry = await setup_integration(hass)
 
         # Set current segment to brightness 50.
         await set_segment_light_to(hass, "seg_1", "turn_on", {ATTR_BRIGHTNESS: 50})
 
-        events = await trigger_motion_dimmer(hass)
+        events = async_capture_events(hass, "call_service")
+        await trigger_motion_dimmer(hass, frozen_time)
 
         # Dimmer is set to brightness 50.
         await dimmer_is_set_to(
@@ -66,7 +72,8 @@ async def test_light_settings(hass: HomeAssistant):
             {ATTR_BRIGHTNESS: 80, ATTR_RGB_COLOR: (255, 0, 0)},
         )
 
-        events = await trigger_motion_dimmer(hass)
+        events.clear()
+        await trigger_motion_dimmer(hass, frozen_time)
 
         # Dimmer is set to brightness 80, red.
         await dimmer_is_set_to(
@@ -84,7 +91,8 @@ async def test_light_settings(hass: HomeAssistant):
             hass, "seg_1", "turn_on", {ATTR_BRIGHTNESS: 90, ATTR_COLOR_TEMP: 3508}
         )
 
-        events = await trigger_motion_dimmer(hass)
+        events.clear()
+        await trigger_motion_dimmer(hass, frozen_time)
 
         # Dimmer is set to brightness 90, 3508K.
         await dimmer_is_set_to(
@@ -100,7 +108,8 @@ async def test_light_settings(hass: HomeAssistant):
         # Set current segment to white.
         await set_segment_light_to(hass, "seg_1", "turn_on", {ATTR_WHITE: True})
 
-        events = await trigger_motion_dimmer(hass)
+        events.clear()
+        await trigger_motion_dimmer(hass, frozen_time)
 
         # Dimmer has no color information.
         await dimmer_is_set_to(
@@ -120,7 +129,8 @@ async def test_light_settings(hass: HomeAssistant):
             SWITCH_DOMAIN, "turn_off", {"entity_id": control_switch}, True
         )
 
-        events = await trigger_motion_dimmer(hass)
+        events.clear()
+        await trigger_motion_dimmer(hass, frozen_time)
 
         # Dimmer is still off.
         assert event_extract(events, "domain") is None
@@ -134,7 +144,8 @@ async def test_light_settings(hass: HomeAssistant):
         # Turn off the current segment.
         await set_segment_light_to(hass, "seg_1", "turn_off")
 
-        events = await trigger_motion_dimmer(hass)
+        events.clear()
+        await trigger_motion_dimmer(hass, frozen_time)
 
         # Dimmer is still off.
         assert event_extract(events, "domain") is None
@@ -142,3 +153,6 @@ async def test_light_settings(hass: HomeAssistant):
         # Finish timers.
         hass.states.async_set(MOCK_BINARY_SENSOR_1_ID, "off")
         await advance_time(hass, DEFAULT_SEG_SECONDS, frozen_time)
+
+        assert await config_entry.async_unload(hass)
+        await hass.async_block_till_done()

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import datetime
+from datetime import datetime
 import logging
 
 from homeassistant.components.sensor import RestoreSensor
@@ -46,21 +46,39 @@ class TimerSensor(MotionDimmerEntity, RestoreSensor):
 
     async def async_update(self) -> None:
         """Fetch new state data for the sensor."""
-
-        switch_attrs = self.hass.states.get(
-            self.external_id(ControlEntities.CONTROL_SWITCH)
-        ).attributes
-        timer_end = switch_attrs.get(SENSOR_END_TIME)
-        timer_seconds = switch_attrs.get(SENSOR_DURATION)
+        timer_end = self._data.motion_dimmer.end_time
+        timer_duration = self._data.motion_dimmer.duration
         if timer_end:
-            timer_end = datetime.datetime.fromisoformat(str(timer_end))
-            self._attr_extra_state_attributes[SENSOR_END_TIME] = timer_end
+            self._attr_extra_state_attributes[SENSOR_END_TIME] = str(timer_end)
             if timer_end > now():
                 self._attr_native_value = SENSOR_ACTIVE
             else:
                 self._attr_native_value = SENSOR_IDLE
 
-            self._attr_extra_state_attributes[SENSOR_DURATION] = timer_seconds
+            self._attr_extra_state_attributes[SENSOR_DURATION] = timer_duration
+
+    async def async_added_to_hass(self) -> None:
+        """Restore last state."""
+        last_state = await self.async_get_last_state()
+        if last_state:
+            timer_end = last_state.attributes.get(SENSOR_END_TIME)
+            if timer_end:
+                timer_end_dt = datetime.fromisoformat(
+                    last_state.attributes.get(SENSOR_END_TIME)
+                )
+                timer_duration = last_state.attributes.get(SENSOR_DURATION)
+                self._attr_extra_state_attributes[SENSOR_END_TIME] = timer_end
+                self._attr_extra_state_attributes[SENSOR_DURATION] = timer_duration
+
+                if timer_end_dt > now():
+                    self._attr_native_value = SENSOR_ACTIVE
+                else:
+                    self._attr_native_value = SENSOR_IDLE
+
+    #     self._data.motion_dimmer.init_timer(
+    #         self._attr_extra_state_attributes[SENSOR_END_TIME],
+    #         self._attr_extra_state_attributes[SENSOR_DURATION],
+    #     )
 
 
 async def async_setup_entry(

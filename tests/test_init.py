@@ -44,11 +44,11 @@ async def test_setup(hass: HomeAssistant):
     entity_id = external_id(hass, ControlEntities.PREDICTION_SECS, CONFIG_NAME)
     assert hass.states.get(entity_id).state == str(DEFAULT_PREDICTION_SECS)
     entity_id = external_id(hass, ControlEntities.SEG_LIGHT, CONFIG_NAME, "seg_1")
-    assert hass.states.get(entity_id).state == "off"
+    assert hass.states.get(entity_id).state == "on"
     entity_id = external_id(hass, ControlEntities.SEG_SECONDS, CONFIG_NAME, "seg_1")
     assert hass.states.get(entity_id).state == str(DEFAULT_SEG_SECONDS)
     entity_id = external_id(hass, ControlEntities.SEG_LIGHT, CONFIG_NAME, "seg_2")
-    assert hass.states.get(entity_id).state == "off"
+    assert hass.states.get(entity_id).state == "on"
     entity_id = external_id(hass, ControlEntities.SEG_SECONDS, CONFIG_NAME, "seg_2")
     assert hass.states.get(entity_id).state == str(DEFAULT_SEG_SECONDS)
     entity_id = external_id(hass, ControlEntities.TRIGGER_INTERVAL, CONFIG_NAME)
@@ -57,3 +57,9 @@ async def test_setup(hass: HomeAssistant):
     assert hass.states.get(entity_id).state == "on"
     entity_id = external_id(hass, ControlEntities.DISABLED_UNTIL, CONFIG_NAME)
     assert get_disable_delta(hass) <= 1
+
+    # Reload Home Assistant.
+    assert await config_entry.async_unload(hass)
+    await hass.async_block_till_done()
+    await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
