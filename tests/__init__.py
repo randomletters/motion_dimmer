@@ -26,10 +26,15 @@ from custom_components.motion_dimmer.const import (
     DEFAULT_SEG_SECONDS,
     DEFAULT_TRIGGER_INTERVAL,
     DOMAIN,
+    SENSOR_IDLE,
     ControlEntities,
     ControlEntityData,
 )
-from custom_components.motion_dimmer.models import MotionDimmerAdapter, external_id
+from custom_components.motion_dimmer.models import (
+    MotionDimmerAdapter,
+    TimerState,
+    external_id,
+)
 
 from .const import (
     BINARY_SENSOR_DOMAIN,
@@ -294,7 +299,7 @@ class MockAdapter(MotionDimmerAdapter):
     color_temp: int = 0
     rgb_color: tuple = ()
     seconds: int = 0
-    # _state_change = None
+    timer: TimerState = None
 
     def __init__(self):
         # Initialize with the default values.
@@ -316,6 +321,7 @@ class MockAdapter(MotionDimmerAdapter):
         self.color_temp = None
         self.rgb_color = None
         self.seconds = DEFAULT_SEG_SECONDS
+        self.timer = TimerState(now(), "00:00:00", SENSOR_IDLE)
         self._state_change = None
 
     def flush_events(self):

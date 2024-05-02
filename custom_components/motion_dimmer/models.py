@@ -207,6 +207,11 @@ class MotionDimmerAdapter:  # pragma: no cover
         raise NotImplementedError
 
     @property
+    def timer(self) -> TimerState:
+        """Get the state of the timer."""
+        raise NotImplementedError
+
+    @property
     def trigger_interval(self) -> float:
         """Number of seconds to wait before checking the triggers again."""
         raise NotImplementedError
@@ -393,6 +398,20 @@ class MotionDimmerHA(MotionDimmerAdapter):
         """The unique id of the segment."""
         segment = self.hass.states.get(self.data.input_select).state
         return slugify(segment)
+
+    @property
+    def timer(self) -> TimerState:
+        """Get the state of the timer."""
+        entity_id = self.external_id(CE.TIMER)
+        timer = self.hass.states.get(entity_id)
+        end_time = timer.attributes.get(SENSOR_END_TIME)
+        end_time = datetime.fromisoformat(end_time) if end_time else now()
+        duration = timer.attributes.get(SENSOR_DURATION) or "00:00:00"
+        return TimerState(
+            end_time,
+            duration,
+            timer.state,
+        )
 
     @property
     def trigger_interval(self) -> float:
@@ -595,8 +614,8 @@ class MotionDimmer:
         self._additional_time = 0
         self._dimmer_time_on = now()
         self._dimmer_time_off = now()
-        self._timer_end_time = None
-        self._timer_duration = None
+        self._timer_end_time = now()
+        self._timer_duration = "00:00:00"
 
     @property
     def adapter(self) -> MotionDimmerHA:
@@ -846,14 +865,19 @@ class MotionDimmer:
         self.adapter.schedule_timer(next_time, duration, self.timer_callback)
         self.track_timer(next_time, duration, SENSOR_ACTIVE)
 
-    def init_timer(self, timer_end, duration) -> None:
+    def init_timer(self, *args, **kwargs) -> None:
         """Init timer."""
+        timer = self.adapter.timer
+        self._timer_end_time = timer.end_time
+        self._timer_duration = timer.duration
 
-        self._timer_end_time = timer_end
-        self._timer_duration = duration
-
-        if timer_end > now():
-            self.schedule_timer(timer_end, duration)
+        # Check if timer was running on HA shutdown.
+        if timer.end_time and timer.end_time > now():
+            # Restart timer because it hasn't finished.
+            self.schedule_timer(timer.end_time, timer.duration)
+        elif timer.end_time and timer.state == SENSOR_ACTIVE:
+            # Finish timer.
+            self.timer_callback()
 
     def schedule_periodic_timer(self) -> None:
         """Start the periodic timer to check triggers."""
@@ -891,3 +915,12 @@ class DimmerStateChange:
     is_on: bool
     old_brightness: int | None
     new_brightness: int | None
+
+
+@dataclass
+class TimerState:
+    """Timer state data."""
+
+    end_time: datetime
+    duration: str
+    state: str

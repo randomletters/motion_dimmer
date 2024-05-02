@@ -1,78 +1,46 @@
 """Test Motion Dimmer setup process."""
 
 import logging
-from unittest.mock import patch, PropertyMock
+
 from freezegun import freeze_time
-from datetime import datetime, timedelta
-from custom_components.motion_dimmer.models import (
-    DimmerStateChange,
-    MotionDimmer,
-    MotionDimmerAdapter,
-    MotionDimmerHA,
-)
-from homeassistant.util.dt import utcnow
-from homeassistant.core import HomeAssistant
 from homeassistant.components.datetime import DOMAIN as DATETIME_DOMAIN
+from homeassistant.components.light import (
+    ColorMode,
+)
+from homeassistant.core import HomeAssistant
+from homeassistant.util.dt import now, utcnow
+
+from pytest_homeassistant_custom_component.common import (
+    async_capture_events,
+)
+
 from custom_components.motion_dimmer.const import (
     DEFAULT_EXTENSION_MAX,
-    DEFAULT_MANUAL_OVERRIDE,
     DEFAULT_MIN_BRIGHTNESS,
     DEFAULT_PREDICTION_BRIGHTNESS,
     DEFAULT_PREDICTION_SECS,
     DEFAULT_SEG_SECONDS,
     DEFAULT_TRIGGER_INTERVAL,
-    SMALL_TIME_OFF,
-    LONG_TIME_OFF,
-    ControlEntities,
-    PUMP_TIME,
 )
-
-from homeassistant.components.light import (
-    ATTR_BRIGHTNESS,
-    ATTR_COLOR_MODE,
-    ATTR_COLOR_TEMP,
-    ATTR_RGB_COLOR,
-    ATTR_WHITE,
-    ColorMode,
-    LightEntity,
-    LightEntityFeature,
+from custom_components.motion_dimmer.models import (
+    MotionDimmerHA,
 )
-
 from tests import (
-    MockAdapter,
     advance_time,
-    event_contains,
     event_extract,
-    event_keys,
     from_pct,
-    get_event_value,
-    let_dimmer_turn_off,
     setup_integration,
-    trigger_motion_dimmer,
-    turn_on_segment,
 )
 
 from .const import (
-    SCRIPT_DOMAIN,
     LIGHT_DOMAIN,
-    MOCK_LIGHT_2_ID,
 )
-from homeassistant.util.dt import now, parse_duration
 
 _LOGGER = logging.getLogger(__name__)
 
-from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
-    async_capture_events,
-    async_fire_time_changed,
-)
-
-
-def dummy_callback():
-    pass
-
 
 async def test_home_assistant_adapter(hass: HomeAssistant):
+    """Test the motion dimmer adapter for Home Assistant."""
     with freeze_time(utcnow()) as frozen_time:
         config_entry = await setup_integration(hass)
         adapter = MotionDimmerHA(hass, config_entry.entry_id)
@@ -95,6 +63,10 @@ async def test_home_assistant_adapter(hass: HomeAssistant):
         assert adapter.prediction_secs == DEFAULT_PREDICTION_SECS
         assert adapter.seconds == DEFAULT_SEG_SECONDS
         assert adapter.trigger_interval == DEFAULT_TRIGGER_INTERVAL
+        timer = adapter.timer
+        delta = (now() - timer.end_time).total_seconds()
+        assert -1 < delta < 1
+        assert timer.duration == "00:00:00"
 
         events = async_capture_events(hass, "call_service")
         await adapter.async_set_temporarily_disabled(now())

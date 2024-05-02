@@ -75,11 +75,6 @@ class TimerSensor(MotionDimmerEntity, RestoreSensor):
                 else:
                     self._attr_native_value = SENSOR_IDLE
 
-    #     self._data.motion_dimmer.init_timer(
-    #         self._attr_extra_state_attributes[SENSOR_END_TIME],
-    #         self._attr_extra_state_attributes[SENSOR_DURATION],
-    #     )
-
 
 async def async_setup_entry(
     hass: HomeAssistant,

@@ -3,12 +3,11 @@
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
+from homeassistant.const import Platform, EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.event import (
     async_track_state_change,
-
 )
 from .const import (
     CONF_DIMMER,
@@ -84,6 +83,11 @@ async def async_setup_entry(
     entry.async_on_unload(entry.add_update_listener(update_listener))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Initialize any timers that were running before shutdown.
+    hass.bus.async_listen_once(
+        EVENT_HOMEASSISTANT_STARTED, data.motion_dimmer.init_timer
+    )
 
     # Add dimmer state listener
     if data.dimmer:

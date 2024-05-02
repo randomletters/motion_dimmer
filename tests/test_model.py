@@ -1,65 +1,43 @@
 """Test Motion Dimmer setup process."""
 
 import logging
-from unittest.mock import patch, PropertyMock
-from freezegun import freeze_time
-from datetime import datetime, timedelta
-from custom_components.motion_dimmer.models import (
-    DimmerStateChange,
-    MotionDimmer,
-    MotionDimmerAdapter,
-    MotionDimmerHA,
-)
-from homeassistant.util.dt import utcnow
-from homeassistant.core import HomeAssistant
-
-from custom_components.motion_dimmer.const import (
-    DEFAULT_EXTENSION_MAX,
-    DEFAULT_MANUAL_OVERRIDE,
-    DEFAULT_MIN_BRIGHTNESS,
-    DEFAULT_PREDICTION_BRIGHTNESS,
-    DEFAULT_PREDICTION_SECS,
-    DEFAULT_SEG_SECONDS,
-    DEFAULT_TRIGGER_INTERVAL,
-    SMALL_TIME_OFF,
-    LONG_TIME_OFF,
-    ControlEntities,
-    PUMP_TIME,
-)
+from datetime import timedelta
+from unittest.mock import PropertyMock, patch
 
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_MODE,
     ATTR_COLOR_TEMP,
     ATTR_RGB_COLOR,
-    ATTR_WHITE,
     ColorMode,
-    LightEntity,
-    LightEntityFeature,
 )
+from homeassistant.core import HomeAssistant
+from homeassistant.util.dt import now
 
+from custom_components.motion_dimmer.const import (
+    DEFAULT_PREDICTION_BRIGHTNESS,
+    DEFAULT_PREDICTION_SECS,
+    DEFAULT_SEG_SECONDS,
+    LONG_TIME_OFF,
+    PUMP_TIME,
+    SENSOR_ACTIVE,
+    SMALL_TIME_OFF,
+)
+from custom_components.motion_dimmer.models import (
+    DimmerStateChange,
+    MotionDimmer,
+    TimerState,
+)
 from tests import (
     MockAdapter,
-    event_contains,
     event_keys,
     get_event_value,
-    let_dimmer_turn_off,
-    setup_integration,
-    trigger_motion_dimmer,
-    turn_on_segment,
 )
-
-from .const import (
-    SCRIPT_DOMAIN,
-    LIGHT_DOMAIN,
-    MOCK_LIGHT_2_ID,
-)
-from homeassistant.util.dt import now, parse_duration
 
 _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.ERROR, force=True)
 
-standard_events = [
+TRIGGER_EVENTS = [
     "turn_on_dimmer",
     "cancel_timer",
     "schedule_timer",
@@ -70,7 +48,7 @@ standard_events = [
 ]
 
 
-async def test_color_modes(hass: HomeAssistant):
+async def test_color_modes():
     """Test default settings."""
 
     mock_adapter = MockAdapter()
@@ -80,7 +58,7 @@ async def test_color_modes(hass: HomeAssistant):
     motion_dimmer.triggered_callback()
     events = mock_adapter.flush_events()
 
-    assert event_keys(events) == standard_events
+    assert event_keys(events) == TRIGGER_EVENTS
     assert get_event_value(events, "turn_on_dimmer", ATTR_BRIGHTNESS) == 255
     assert get_event_value(events, "turn_on_dimmer", ATTR_COLOR_MODE) == ColorMode.WHITE
     assert get_event_value(events, "schedule_timer", "secs") == DEFAULT_SEG_SECONDS
@@ -95,7 +73,7 @@ async def test_color_modes(hass: HomeAssistant):
     motion_dimmer.triggered_callback()
     events = mock_adapter.flush_events()
 
-    assert event_keys(events) == standard_events
+    assert event_keys(events) == TRIGGER_EVENTS
     assert get_event_value(events, "turn_on_dimmer", ATTR_BRIGHTNESS) == 33
     assert (
         get_event_value(events, "turn_on_dimmer", ATTR_COLOR_MODE)
@@ -112,13 +90,13 @@ async def test_color_modes(hass: HomeAssistant):
     motion_dimmer.triggered_callback()
     events = mock_adapter.flush_events()
 
-    assert event_keys(events) == standard_events
+    assert event_keys(events) == TRIGGER_EVENTS
     assert get_event_value(events, "turn_on_dimmer", ATTR_BRIGHTNESS) == 44
     assert get_event_value(events, "turn_on_dimmer", ATTR_COLOR_MODE) == ColorMode.RGB
     assert get_event_value(events, "turn_on_dimmer", ATTR_RGB_COLOR) == (255, 0, 0)
 
 
-async def test_trigger(hass: HomeAssistant):
+async def test_trigger():
     """Test default settings."""
 
     mock_adapter = MockAdapter()
@@ -130,7 +108,7 @@ async def test_trigger(hass: HomeAssistant):
     events = mock_adapter.flush_events()
 
     # Dimmer is restarted instead of stopped.
-    assert event_keys(events) == standard_events
+    assert event_keys(events) == TRIGGER_EVENTS
 
 
 async def test_predicter():
@@ -226,7 +204,7 @@ async def test_predicter():
     events = mock_adapter.flush_events()
 
     # Dimmer is turned on normally.
-    assert event_keys(events) == standard_events
+    assert event_keys(events) == TRIGGER_EVENTS
     assert get_event_value(events, "turn_on_dimmer", ATTR_BRIGHTNESS) == 255
     assert get_event_value(events, "schedule_timer", "secs") == DEFAULT_SEG_SECONDS
     assert get_event_value(events, "schedule_periodic_timer", "secs") == 59
@@ -452,7 +430,7 @@ async def test_extension():
         events = mock_adapter.flush_events()
 
         # Extension has not changed.
-        assert event_keys(events) == standard_events
+        assert event_keys(events) == TRIGGER_EVENTS
         assert (
             get_event_value(events, "schedule_timer", "secs")
             == DEFAULT_SEG_SECONDS + max_ext
@@ -468,7 +446,7 @@ async def test_extension():
         events = mock_adapter.flush_events()
 
         # Extension has decreased but not completely.
-        assert event_keys(events) == standard_events
+        assert event_keys(events) == TRIGGER_EVENTS
         assert get_event_value(
             events, "schedule_timer", "secs"
         ) == DEFAULT_SEG_SECONDS + (max_ext / 2)
@@ -483,7 +461,7 @@ async def test_extension():
         events = mock_adapter.flush_events()
 
         # Extension has reset.
-        assert event_keys(events) == standard_events
+        assert event_keys(events) == TRIGGER_EVENTS
         assert get_event_value(events, "schedule_timer", "secs") == DEFAULT_SEG_SECONDS
 
 
@@ -524,4 +502,41 @@ async def test_periodic_timer():
         "schedule_timer",
         "track_timer",
         "turn_on_script",
+    ]
+
+
+async def test_init_timer():
+    """Test initialize timer."""
+
+    mock_adapter = MockAdapter()
+    motion_dimmer = MotionDimmer(mock_adapter)
+
+    motion_dimmer.init_timer()
+    events = mock_adapter.flush_events()
+
+    assert event_keys(events) == []
+
+    mock_adapter.timer = TimerState(
+        now() + timedelta(seconds=10), "00:00:10", SENSOR_ACTIVE
+    )
+    motion_dimmer.init_timer()
+    events = mock_adapter.flush_events()
+
+    assert event_keys(events) == [
+        "cancel_timer",
+        "schedule_timer",
+        "track_timer",
+    ]
+
+    mock_adapter.timer = TimerState(
+        now() - timedelta(seconds=10), "00:00:10", SENSOR_ACTIVE
+    )
+    motion_dimmer.init_timer()
+    events = mock_adapter.flush_events()
+
+    assert event_keys(events) == [
+        "cancel_timer",
+        "cancel_periodic_timer",
+        "turn_off_dimmer",
+        "track_timer",
     ]
