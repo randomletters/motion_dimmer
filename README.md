@@ -23,12 +23,12 @@ Once added, click on "Configure" and fill out the following fields (\* required)
 - `Dropdown Helper*`: The dropdown that will define and control which settings are active.
 - `Triggers*`: The main binary sensors that will fully activate the dimmer.
 - `Predictors`: Any adjacent binary sensors that will briefly activate the dimmer.
-- `Script`: A script that will run after the dimmer is triggered.
+- `Script`: A script that will run after the dimmer is triggered. [More...](#scripts)
 
 Once configured, you can edit the entities that control the Motion Dimmer by going to the device.
 
 - `Option: [dropdown_option]`: This light entity stores the state to display when triggered. There will be one light entity per dropdown_option. Turning this control off disables the dimmer until the dropdown helper changes to another option. If you are controlling a smart light with color functionality and do not want the Motion Dimmer to update the color, set the brightness and press the “White” mode button so no color information is sent when activated.
-- `Option: [dropdown option]`: This number entity determines the number of seconds the light will be activated.[More...](#timers)
+- `Option: [dropdown option]`: This number entity determines the number of seconds the light will be activated. [More...](#timers)
 - `Motion Dimmer`: This switch enables and disables all Motion Dimmer functionality. When off, the dimmer will function as a normal dimmer, with no motion functionality.
 - `Manual Override Time`: The number of seconds to disable the Motion Dimmer when the dimmer is manually operated. Set this to 0 if you do not want the Motion Dimmer to be disabled automatically. [More...](#manual-override-time)
 - `Disabled Until`: When a Motion Dimmer is manually overridden, the “Disabled Until” datetime is set to the future. The Motion Dimmer will not activate until after that time. You can manually set this time if you want the dimmer to be deactivated temporarily.
@@ -68,6 +68,10 @@ Here is an example of how you might set up the dropdown options:
 
 When you change the option manually or via an automation, the Motion Dimmer will automatically use the new settings.
 
+### Scripts
+
+Scripts are only activated when the dimmer is first triggered from "off" (or mid prediction mode). Often you might want to have something happen when the lights turn on, but not every time motion is sensed. If you use Motion Dimmer predicters, then you can't trigger based on the dimmer state. Instead you can create a script and Motion Dimmer will only call it on actual triggers, not prediction triggers. It will not be called again until the dimmer is off.
+
 ### Timers
 
 When a Motion Dimmer is triggered, an internal timer is started. This timer will persist across Home Assistant restarts.
@@ -90,7 +94,7 @@ Often when you enter a room with a motion sensor the light doesn’t turn on unt
 
 ### Prediction Brightness
 
-You might set this to a low brightness that just barely illuminates the room. Then, if you activate the main trigger, the Motion Dimmer will turn on the dimmer to full configured settings. If you don't enter the room and activate the main trigger, the dimmer will turn back off after a short time.
+You might set this to a low brightness that just barely illuminates the room. Then, if you activate the main trigger, the Motion Dimmer will turn on the dimmer to full configured settings. Prediction Brightness will not cause the dimmer to go brighter than the current dropdown option brightness even if it is set higher. If you don't enter the room and activate the main trigger, the dimmer will turn back off after the time specified in Prediction Time.
 
 ### Minimum Brightness
 
