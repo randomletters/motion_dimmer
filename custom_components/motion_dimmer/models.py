@@ -594,7 +594,7 @@ class MotionDimmer:
         """Initialize the Motion Dimmer."""
         self._adapter = adapter
         self._is_prediction = False
-        self._is_pump = False
+        self._is_pumping = False
         self._was_dimmer_on = False
         self._additional_time = 0
         self._dimmer_time_on = now()
@@ -695,7 +695,7 @@ class MotionDimmer:
         if not same_state:
             if change.is_on != self.adapter.are_triggers_on and not self._is_prediction:
                 self.disable_temporarily()
-        elif not same_bright and not self._is_pump:
+        elif not same_bright and not self._is_pumping:
             # Give a 1 percent margin of error.
             diff = self.adapter.brightness - change.new_brightness
             if -1 < diff > 1:
@@ -743,17 +743,48 @@ class MotionDimmer:
             else:
                 self.schedule_periodic_timer()
 
+    def predict(self):
+        """Start the dimmer based on a prediction."""
+        if self._is_prediction:
+            # Prediction brightness is > minimum and < regular brightness.
+            brightness = min(
+                max(self.adapter.prediction_brightness, self.adapter.brightness_min),
+                self.adapter.brightness,
+            )
+            delay = timedelta(seconds=self.adapter.prediction_secs)
+            self.turn_on_dimmer(brightness)
+            self.schedule_timer(now() + delay, str(delay))
+            return True
+
+        return False
+
     def predicter_callback(self, *args, **kwargs) -> None:
         """Run when predicters are activated."""
         # Do nothing if the dimmer is already on.
-        if self.adapter.is_dimmer_on:
+        if self.adapter.is_dimmer_on or not self.is_enabled:
             return
 
         self.start_dimmer(is_prediction=True)
 
+    def pump(self) -> bool:
+        """Start the dimmer at a brightness above the target brightness."""
+        if (
+            not self._was_dimmer_on
+            and not self._is_pumping
+            and not self._is_prediction
+            and self.adapter.brightness < self.adapter.brightness_min
+        ):
+            self._is_pumping = True
+            self.turn_on_dimmer(brightness=self.adapter.brightness_min)
+            self.schedule_pump_timer()
+            return True
+
+        return False
+
     def pump_callback(self, *args, **kwargs) -> None:
         """Turn on the dimmer to normal brightness after pump."""
-        self.start_dimmer()
+        if self.is_enabled:
+            self.start_dimmer()
 
     def reset_dimmer_time_off(self) -> None:
         """Reset dimmer time off."""
@@ -795,60 +826,39 @@ class MotionDimmer:
 
     def start_dimmer(self, is_prediction=False) -> None:
         """Turn on the dimmer."""
-        if self.is_enabled:
-            # Predictions are not considered "on".
-            self._was_dimmer_on = (
-                self._is_prediction is False and self.adapter.is_dimmer_on
-            )
+        # Predictions and Pumps are not considered "on".
+        self._was_dimmer_on = (
+            (not self._is_prediction)
+            and (not self._is_pumping)
+            and self.adapter.is_dimmer_on
+        )
+        # Prediction state must be set AFTER previous check.
+        self._is_prediction = is_prediction
 
-            # Internal state must be set after previous check.
-            self._is_prediction = is_prediction
+        if self.pump():
+            return
 
-            if (
-                not self._is_pump
-                and not self._is_prediction
-                and not self._was_dimmer_on
-                and self.adapter.brightness
-                and self.adapter.brightness < self.adapter.brightness_min
-            ):
-                self._is_pump = True
-                self.reset_dimmer_time_on()
-                self.turn_on_dimmer(brightness=self.adapter.brightness_min)
-                self.schedule_pump_timer()
-            elif self._is_prediction:
-                # Make sure prediction brightness is more than the min
-                # and less than regular brightness.
-                brightness = min(
-                    max(
-                        self.adapter.prediction_brightness, self.adapter.brightness_min
-                    ),
-                    self.adapter.brightness,
-                )
+        if self.predict():
+            return
 
-                delay = timedelta(seconds=self.adapter.prediction_secs)
+        self._is_pumping = False
+        if not self._was_dimmer_on:
+            self.reset_dimmer_time_on()
 
-                self.turn_on_dimmer(brightness)
-                self.schedule_timer(now() + delay, str(delay))
+        self.add_time()
+        self.turn_on_dimmer()
+        self.schedule_timer()
+        self.schedule_periodic_timer()
 
-            else:
-                self._is_pump = False
-                if not self._was_dimmer_on:
-                    self.reset_dimmer_time_on()
-
-                self.add_time()
-                self.turn_on_dimmer()
-                self.schedule_timer()
-                self.schedule_periodic_timer()
-
-                # Only trigger the script if dimmer was off.
-                if not self._was_dimmer_on:
-                    self.adapter.turn_on_script()
+        # Only trigger the script if dimmer was off.
+        if not self._was_dimmer_on:
+            self.adapter.turn_on_script()
 
     def stop_dimmer(self) -> None:
         """Turn off the dimmer."""
         if self.adapter.is_on and not self.is_temporarily_disabled:
-            # Check if triggers are are still on and make sure the segment
-            # didn't get disabled or transitioned to a disabled segment.
+            # Check if triggers are are still on and make sure we turn off
+            # the dimmer if the segment changed and the new one is disabled.
             if self.adapter.are_triggers_on and self.adapter.is_segment_enabled:
                 # Restart everything instead of stopping.
                 self.start_dimmer()
@@ -874,7 +884,8 @@ class MotionDimmer:
 
     def triggered_callback(self, *args, **kwargs) -> None:
         """Run when triggers are activated."""
-        self.start_dimmer()
+        if self.is_enabled:
+            self.start_dimmer()
 
     def turn_on_dimmer(self, brightness: int | None = None):
         """Turn on the dimmer."""
