@@ -13,7 +13,7 @@ from .const import (
     CONF_DIMMER,
     CONF_FRIENDLY_NAME,
     CONF_INPUT_SELECT,
-    CONF_PREDICTERS,
+    CONF_PREDICTORS,
     CONF_SCRIPT,
     CONF_TRIGGERS,
     CONF_UNIQUE_NAME,
@@ -74,7 +74,7 @@ async def async_setup_entry(
         dimmer=entry.options.get(CONF_DIMMER, None),
         input_select=entry.options.get(CONF_INPUT_SELECT, None),
         triggers=entry.options.get(CONF_TRIGGERS, None),
-        predicters=entry.options.get(CONF_PREDICTERS, None),
+        predictors=entry.options.get(CONF_PREDICTORS, None),
         script=entry.options.get(CONF_SCRIPT, None),
         motion_dimmer=None,
     )
@@ -107,12 +107,12 @@ async def async_setup_entry(
             to_state="on",
         )
 
-    # Add predicter on listener
-    if data.predicters:
+    # Add predictor on listener
+    if data.predictors:
         async_track_state_change(
             hass,
-            data.predicters,
-            data.motion_dimmer.predicter_callback,
+            data.predictors,
+            data.motion_dimmer.predictor_callback,
             to_state="on",
         )
 

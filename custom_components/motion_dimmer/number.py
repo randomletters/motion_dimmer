@@ -114,7 +114,7 @@ async def async_setup_entry(
         ),
     ]
 
-    if data.predicters:
+    if data.predictors:
         entities.append(
             TimeNumber(
                 data,

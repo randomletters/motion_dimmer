@@ -12,7 +12,7 @@ CONF_FRIENDLY_NAME = "friendly_name"
 CONF_DIMMER = "dimmer"
 CONF_INPUT_SELECT = "input_select"
 CONF_TRIGGERS = "triggers"
-CONF_PREDICTERS = "predicters"
+CONF_PREDICTORS = "predictors"
 CONF_SCRIPT = "script"
 
 DEFAULT_SEG_SECONDS = 60

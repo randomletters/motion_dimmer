@@ -20,7 +20,7 @@ from .const import (
     CONF_DIMMER,
     CONF_FRIENDLY_NAME,
     CONF_INPUT_SELECT,
-    CONF_PREDICTERS,
+    CONF_PREDICTORS,
     CONF_SCRIPT,
     CONF_TRIGGERS,
     CONF_UNIQUE_NAME,
@@ -127,8 +127,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         ),
                     ),
                     vol.Optional(
-                        CONF_PREDICTERS,
-                        default=entry.options.get(CONF_PREDICTERS, vol.UNDEFINED),
+                        CONF_PREDICTORS,
+                        default=entry.options.get(CONF_PREDICTORS, vol.UNDEFINED),
                     ): EntitySelector(
                         EntitySelectorConfig(
                             domain=[BINARY_SENSOR_DOMAIN],

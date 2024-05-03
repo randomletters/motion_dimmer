@@ -20,14 +20,14 @@
                     "dimmer": "Dimmer",
                     "input_select": "Dropdown Helper (Input Select)",
                     "triggers": "Triggers",
-                    "predicters": "Predicters",
+                    "predictors": "Predictors",
                     "script": "Script"
                 },
                 "data_description": {
                     "dimmer": "The dimmer that will be controlled.",
                     "input_select": "The dropdown helper that defines the options.",
                     "triggers": "The entities that will activate the dimmer.",
-                    "predicters": "The entities that predict activation.",
+                    "predictors": "The entities that predict activation.",
                     "script": "The script that runs when the dimmer is triggered."
                 }
             }

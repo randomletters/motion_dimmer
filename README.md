@@ -70,7 +70,7 @@ When you change the option manually or via an automation, the Motion Dimmer will
 
 ### Scripts
 
-Scripts are only activated when the dimmer is first triggered from "off" (or mid prediction mode). Often you might want to have something happen when the lights turn on, but not every time motion is sensed. If you use Motion Dimmer predicters, then you can't trigger based on the dimmer state. Instead you can create a script and Motion Dimmer will only call it on actual triggers, not prediction triggers. It will not be called again until the dimmer is off.
+Scripts are only activated when the dimmer is first triggered from "off" (or mid prediction mode). Often you might want to have something happen when the lights turn on, but not every time motion is sensed. If you use Motion Dimmer predictors, then you can't trigger based on the dimmer state. Instead you can create a script and Motion Dimmer will only call it on actual triggers, not prediction triggers. It will not be called again until the dimmer is off.
 
 ### Timers
 
