@@ -47,6 +47,13 @@ TRIGGER_EVENTS = [
     "turn_on_script",
 ]
 
+TURN_OFF_EVENTS = [
+    "cancel_timer",
+    "cancel_periodic_timer",
+    "turn_off_dimmer",
+    "track_timer",
+]
+
 
 async def test_color_modes():
     """Test default settings."""
@@ -97,18 +104,37 @@ async def test_color_modes():
 
 
 async def test_trigger():
-    """Test default settings."""
+    """Test finishing while trigger is active."""
 
     mock_adapter = MockAdapter()
     motion_dimmer = MotionDimmer(mock_adapter)
 
-    # Finish a timer with the trigger still on.
+    # Finish a timer with trigger still on.
     mock_adapter.are_triggers_on = True
     motion_dimmer.timer_callback()
     events = mock_adapter.flush_events()
 
     # Dimmer is restarted instead of stopped.
     assert event_keys(events) == TRIGGER_EVENTS
+
+    # Finish a timer with trigger still on but Motion Dimmer disabled.
+    mock_adapter.are_triggers_on = True
+    mock_adapter.is_on = False
+    motion_dimmer.timer_callback()
+    events = mock_adapter.flush_events()
+
+    # Timer is updated to "idle".
+    assert event_keys(events) == ["track_timer"]
+
+    # Finish a timer with trigger still on but segment disabled.
+    mock_adapter.are_triggers_on = True
+    mock_adapter.is_segment_enabled = False
+    mock_adapter.is_on = True
+    motion_dimmer.stop_dimmer()
+    events = mock_adapter.flush_events()
+
+    # Dimmer is stopped.
+    assert event_keys(events) == TURN_OFF_EVENTS
 
 
 async def test_predicter():
@@ -141,12 +167,7 @@ async def test_predicter():
     events = mock_adapter.flush_events()
 
     # Dimmer is turned off.
-    assert event_keys(events) == [
-        "cancel_timer",
-        "cancel_periodic_timer",
-        "turn_off_dimmer",
-        "track_timer",
-    ]
+    assert event_keys(events) == TURN_OFF_EVENTS
 
     # Test prediction brightness lower than minimum.
     mock_adapter = MockAdapter()
@@ -273,7 +294,7 @@ async def test_disable():
 
     # Disable the segment.
     mock_adapter.is_on = True
-    mock_adapter.is_enabled = False
+    mock_adapter.is_segment_enabled = False
     motion_dimmer.triggered_callback()
     motion_dimmer.predicter_callback()
     motion_dimmer.periodic_callback()
@@ -317,6 +338,7 @@ async def test_cause_temp_disable():
 
     # Motion dimmer is temporarily disabled.
     assert event_keys(events) == disable_events
+    assert get_event_value(events, "set_temporarily_disabled", "secs") == 600
 
     # Manually turn on the light while the triggers are on.
     mock_adapter._state_change = DimmerStateChange(False, True, 0, 255)
@@ -358,7 +380,7 @@ async def test_cause_temp_disable():
 
     # Manually change light while Motion Dimmer is disabled.
     mock_adapter._state_change = DimmerStateChange(False, True, 0, 255)
-    mock_adapter.is_enabled = False
+    mock_adapter.is_segment_enabled = False
     mock_adapter.are_triggers_on = False
     motion_dimmer.dimmer_state_callback()
     events = mock_adapter.flush_events()
@@ -506,37 +528,38 @@ async def test_periodic_timer():
 
 
 async def test_init_timer():
-    """Test initialize timer."""
+    """Test initialize timer on restart."""
 
     mock_adapter = MockAdapter()
     motion_dimmer = MotionDimmer(mock_adapter)
 
+    # No timers are running after restart.
     motion_dimmer.init_timer()
     events = mock_adapter.flush_events()
 
+    # Nothing is changed.
     assert event_keys(events) == []
 
+    # A timer scheduled for the future was running after restart.
     mock_adapter.timer = TimerState(
         now() + timedelta(seconds=10), "00:00:10", SENSOR_ACTIVE
     )
     motion_dimmer.init_timer()
     events = mock_adapter.flush_events()
 
+    # The timer is restarted.
     assert event_keys(events) == [
         "cancel_timer",
         "schedule_timer",
         "track_timer",
     ]
 
+    # A timer was active but is now in the past.
     mock_adapter.timer = TimerState(
         now() - timedelta(seconds=10), "00:00:10", SENSOR_ACTIVE
     )
     motion_dimmer.init_timer()
     events = mock_adapter.flush_events()
 
-    assert event_keys(events) == [
-        "cancel_timer",
-        "cancel_periodic_timer",
-        "turn_off_dimmer",
-        "track_timer",
-    ]
+    # Dimmer stopped after restart.
+    assert event_keys(events) == TURN_OFF_EVENTS

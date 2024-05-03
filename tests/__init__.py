@@ -271,7 +271,7 @@ def has_event(events: list[dict], key) -> bool:
     return False
 
 
-def get_event_value(events: list[dict], key, subkey) -> bool:
+def get_event_value(events: list[dict], key, subkey) -> Any:
     for event in events:
         if event.get(key) and event.get(key).get(subkey):
             return event.get(key).get(subkey)
@@ -283,12 +283,12 @@ class MockAdapter(MotionDimmerAdapter):
     # Override the properties so they can be set manually.
     are_triggers_on: bool = False
     brightness_min: int = 0
-    # dimmer_state: bool = False
     disabled_until: datetime = now()
     extension_max: int = 0
     is_dimmer_on: bool = False
-    is_enabled: bool = False
+    is_segment_enabled: bool = False
     is_on: bool = False
+    manual_override = 0
     prediction_brightness: int = 0
     prediction_secs: int = 0
     segment_id: str = ""
@@ -306,12 +306,12 @@ class MockAdapter(MotionDimmerAdapter):
         self._events: list = []
         self.are_triggers_on = False
         self.brightness_min = DEFAULT_MIN_BRIGHTNESS
-        # self.dimmer_state = False
         self.disabled_until = now()
         self.extension_max = DEFAULT_EXTENSION_MAX
         self.is_dimmer_on = False
-        self.is_enabled = True
+        self.is_segment_enabled = True
         self.is_on = True
+        self.manual_override = 600
         self.prediction_brightness = DEFAULT_PREDICTION_BRIGHTNESS
         self.prediction_secs = DEFAULT_PREDICTION_SECS
         self.segment_id = "seg_1"

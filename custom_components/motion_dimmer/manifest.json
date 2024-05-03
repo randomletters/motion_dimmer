@@ -1,9 +1,13 @@
 {
   "domain": "motion_dimmer",
-  "name": "Motion Dimmers",
-  "codeowners": ["@randomletters"],
+  "name": "Motion Dimmer",
+  "codeowners": [
+    "@randomletters"
+  ],
   "config_flow": true,
-  "dependencies": ["input_select"],
+  "dependencies": [
+    "input_select"
+  ],
   "documentation": "https://github.com/randomletters/motion_dimmer",
   "homekit": {},
   "iot_class": "local_polling",
