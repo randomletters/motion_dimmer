@@ -121,16 +121,8 @@ class MotionDimmerEntity(Entity):
         info = DeviceInfo(
             identifiers={(DOMAIN, device_id)},
             name=data.device_name,
-            manufacturer="Motion Dimmer",
-            model="Motion Dimmer",
         )
         self._attr_device_info = info
-
-    # def external_id(
-    #     self, ced: ControlEntityData, seg_id: str | None = None
-    # ) -> str | None:
-    #     """Get the entity id from entity data."""
-    #     return external_id(self.hass, ced, self._data.device_id, seg_id)
 
 
 class MotionDimmerAdapter:  # pragma: no cover
