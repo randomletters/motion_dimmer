@@ -93,7 +93,7 @@ class MotionDimmerData:
     dimmer: str
     input_select: str
     triggers: list
-    predicters: list | None
+    predictors: list | None
     script: str | None
     motion_dimmer: MotionDimmer
 
@@ -758,8 +758,8 @@ class MotionDimmer:
 
         return False
 
-    def predicter_callback(self, *args, **kwargs) -> None:
-        """Run when predicters are activated."""
+    def predictor_callback(self, *args, **kwargs) -> None:
+        """Run when predictors are activated."""
         # Do nothing if the dimmer is already on.
         if self.adapter.is_dimmer_on or not self.is_enabled:
             return

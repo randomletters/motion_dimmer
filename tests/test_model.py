@@ -137,13 +137,13 @@ async def test_trigger():
     assert event_keys(events) == TURN_OFF_EVENTS
 
 
-async def test_predicter():
-    """Test predicter settings."""
+async def test_predictor():
+    """Test predictor settings."""
 
-    # Test predicter when dimmer is off.
+    # Test predictor when dimmer is off.
     mock_adapter = MockAdapter()
     motion_dimmer = MotionDimmer(mock_adapter)
-    motion_dimmer.predicter_callback()
+    motion_dimmer.predictor_callback()
     events = mock_adapter.flush_events()
 
     prediction_events = [
@@ -174,7 +174,7 @@ async def test_predicter():
     motion_dimmer = MotionDimmer(mock_adapter)
     mock_adapter.brightness_min = 50
     mock_adapter.prediction_brightness = 10
-    motion_dimmer.predicter_callback()
+    motion_dimmer.predictor_callback()
     events = mock_adapter.flush_events()
 
     assert event_keys(events) == prediction_events
@@ -185,26 +185,26 @@ async def test_predicter():
     motion_dimmer = MotionDimmer(mock_adapter)
     mock_adapter.brightness = 10
     mock_adapter.prediction_brightness = 50
-    motion_dimmer.predicter_callback()
+    motion_dimmer.predictor_callback()
     events = mock_adapter.flush_events()
 
     assert event_keys(events) == prediction_events
     assert get_event_value(events, "turn_on_dimmer", "brightness") == 10
 
-    # Test predicter when dimmer is on.
+    # Test predictor when dimmer is on.
     mock_adapter = MockAdapter()
     motion_dimmer = MotionDimmer(mock_adapter)
     mock_adapter.is_dimmer_on = True
-    motion_dimmer.predicter_callback()
+    motion_dimmer.predictor_callback()
     events = mock_adapter.flush_events()
 
     # Nothing is changed.
     assert event_keys(events) == []
 
-    # Test dimmer when predicter is on.
+    # Test dimmer when predictor is on.
     mock_adapter = MockAdapter()
     motion_dimmer = MotionDimmer(mock_adapter)
-    motion_dimmer.predicter_callback()
+    motion_dimmer.predictor_callback()
     events = mock_adapter.flush_events()
 
     # Dimmer is turned on to prediction brightness for prediction seconds.
@@ -232,7 +232,7 @@ async def test_predicter():
 
 
 async def test_pump():
-    """Test predicter settings."""
+    """Test predictor settings."""
 
     # Test pump when dimmer brightness is lower than minimum.
     mock_adapter = MockAdapter()
@@ -278,7 +278,7 @@ async def test_disable():
     # Test disable motion dimmer.
     mock_adapter.is_on = False
     motion_dimmer.triggered_callback()
-    motion_dimmer.predicter_callback()
+    motion_dimmer.predictor_callback()
     motion_dimmer.periodic_callback()
     events = mock_adapter.flush_events()
 
@@ -296,7 +296,7 @@ async def test_disable():
     mock_adapter.is_on = True
     mock_adapter.is_segment_enabled = False
     motion_dimmer.triggered_callback()
-    motion_dimmer.predicter_callback()
+    motion_dimmer.predictor_callback()
     motion_dimmer.periodic_callback()
     events = mock_adapter.flush_events()
 
@@ -313,7 +313,7 @@ async def test_temp_disable():
     # Test disable motion dimmer.
     mock_adapter.disabled_until = now() + timedelta(seconds=100)
     motion_dimmer.triggered_callback()
-    motion_dimmer.predicter_callback()
+    motion_dimmer.predictor_callback()
     motion_dimmer.periodic_callback()
     events = mock_adapter.flush_events()
 
