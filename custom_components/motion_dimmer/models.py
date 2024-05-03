@@ -154,13 +154,18 @@ class MotionDimmerAdapter:  # pragma: no cover
         raise NotImplementedError
 
     @property
-    def is_enabled(self) -> bool:
+    def is_segment_enabled(self) -> bool:
         """Return true if segment is enabled."""
         raise NotImplementedError
 
     @property
     def is_on(self) -> bool:
         """Is Motion Dimmer enabled"""
+        raise NotImplementedError
+
+    @property
+    def manual_override(self) -> int:
+        """The number of seconds to temprarily disable."""
         raise NotImplementedError
 
     @property
@@ -331,7 +336,7 @@ class MotionDimmerHA(MotionDimmerAdapter):
         return self.hass.states.is_state(self.data.dimmer, "on")
 
     @property
-    def is_enabled(self) -> bool:
+    def is_segment_enabled(self) -> bool:
         """Return true if segment is enabled."""
         return self.hass.states.is_state(
             self.external_id(CE.SEG_LIGHT, self.segment_id), "on"
@@ -341,6 +346,11 @@ class MotionDimmerHA(MotionDimmerAdapter):
     def is_on(self) -> bool:
         """Is Motion Dimmer enabled"""
         return self.hass.states.is_state(self.external_id(CE.CONTROL_SWITCH), "on")
+
+    @property
+    def manual_override(self) -> int:
+        """The number of seconds to temprarily disable."""
+        return int(self.hass.states.get(self.external_id(CE.MANUAL_OVERRIDE)).state)
 
     @property
     def prediction_brightness(self) -> float:
@@ -598,35 +608,9 @@ class MotionDimmer:
         return self._adapter
 
     @property
-    def additional_time(self) -> int:
-        """Amount of time to add to the timer."""
-        # Initialize the attribute.
-        total = self._additional_time
-        off_seconds = self.dimmer_off_seconds
-        if off_seconds <= 0:
-            # Light is on so only extend a small amount.
-            total += int(self.dimmer_on_seconds / 5)
-        elif off_seconds < SMALL_TIME_OFF:
-            # Light was briefly off, so extend by normal amount
-            total += self.dimmer_on_seconds
-        elif off_seconds < LONG_TIME_OFF:
-            # Light was off for a little while, so decrease the extension.
-            total -= int(self._additional_time / 2)
-        else:
-            # Light was off for long time.  Reset extension.
-            total = 0
-
-        # Make sure it is between 0 and max time.
-        total = min(self.adapter.extension_max, max(total, 0))
-
-        return total
-
-    @property
     def dimmer_on_seconds(self) -> int:
         """Number of seconds the dimmer was on."""
-        start_dt = self._dimmer_time_on
-        end_dt = now()
-        diff = end_dt - start_dt
+        diff = now() - self._dimmer_time_on
         return round(diff.total_seconds())
 
     @property
@@ -635,31 +619,32 @@ class MotionDimmer:
         if self.adapter.is_dimmer_on:
             return 0
 
-        start_dt = self._dimmer_time_off
-        end_dt = now()
-        diff = end_dt - start_dt
+        diff = now() - self._dimmer_time_off
         return round(diff.total_seconds())
 
     @property
     def duration(self) -> str:
-        """Get the storage adapter."""
+        """Get the duration."""
         return self._timer_duration
 
     @property
     def end_time(self) -> datetime:
-        """Get the storage adapter."""
+        """Get the end time."""
         return self._timer_end_time
 
     @property
     def is_enabled(self) -> bool:
         """Return true if device is enabled."""
+        # Motion Dimmer is on.
         if not self.adapter.is_on:
             return False
 
+        # Motion Dimmer is not temporarily disabled.
         if self.is_temporarily_disabled:
             return False
 
-        return self.adapter.is_enabled
+        # Current segment is enabled.
+        return self.adapter.is_segment_enabled
 
     @property
     def is_temporarily_disabled(self) -> bool:
@@ -673,32 +658,52 @@ class MotionDimmer:
 
     def add_time(self) -> None:
         """Add time to the timer."""
-        self._additional_time = self.additional_time
+        # Initialize the attribute.
+        total = self._additional_time
+        off_seconds = self.dimmer_off_seconds
+        if off_seconds <= 0:
+            # Light is on so only extend a small amount.
+            total += int(self.dimmer_on_seconds / 5)
+        elif off_seconds < SMALL_TIME_OFF:
+            # Light was briefly off, so extend by normal amount
+            total += self.dimmer_on_seconds
+        elif off_seconds < LONG_TIME_OFF:
+            # Light was off for a little while, so decrease the extension.
+            total -= int(total / 2)
+        else:
+            # Light was off for long time.  Reset extension.
+            total = 0
+
+        # Make sure it is between 0 and max time.
+        total = min(self.adapter.extension_max, max(total, 0))
+
+        self._additional_time = total
 
     def dimmer_state_callback(self, *args, **kwargs) -> None:
         """Check if dimmer was changed manually."""
         if not self.is_enabled:
             return
 
-        # Compare states.
+        # Pass callback to adapter for platform-specific handling.
         change = self.adapter.dimmer_state_callback(*args, **kwargs)
+
+        # Compare states.
         same_state = change.was_on == change.is_on
         same_bright = change.old_brightness == change.new_brightness
         # Don't worry about changes in color or temp.
 
         if not same_state:
-            if change.is_on != self.adapter.are_triggers_on:
-                if not self._is_prediction:
-                    self.disable_temporarily()
+            if change.is_on != self.adapter.are_triggers_on and not self._is_prediction:
+                self.disable_temporarily()
         elif not same_bright and not self._is_pump:
             # Give a 1 percent margin of error.
-            bright = self.adapter.brightness
-            if change.new_brightness + 1 < bright or change.new_brightness - 1 > bright:
+            diff = self.adapter.brightness - change.new_brightness
+            if -1 < diff > 1:
                 self.disable_temporarily()
 
     def disable_temporarily(self) -> None:
         """Disable all functionality for a time."""
-        seconds = self.adapter.seconds
+        seconds = self.adapter.manual_override
         if seconds and int(seconds) > 0:
             delay = timedelta(seconds=int(seconds))
             next_time = now() + delay
@@ -844,7 +849,7 @@ class MotionDimmer:
         if self.adapter.is_on and not self.is_temporarily_disabled:
             # Check if triggers are are still on and make sure the segment
             # didn't get disabled or transitioned to a disabled segment.
-            if self.adapter.are_triggers_on and self.adapter.is_enabled:
+            if self.adapter.are_triggers_on and self.adapter.is_segment_enabled:
                 # Restart everything instead of stopping.
                 self.start_dimmer()
             else:

@@ -57,8 +57,9 @@ async def test_home_assistant_adapter(hass: HomeAssistant):
         assert -1 < delta < 1
         assert adapter.extension_max == DEFAULT_EXTENSION_MAX
         assert adapter.is_dimmer_on == False
-        assert adapter.is_enabled
+        assert adapter.is_segment_enabled
         assert adapter.is_on
+        assert adapter.manual_override == 600
         assert adapter.segment_id == "seg_1"
         assert adapter.prediction_brightness == from_pct(DEFAULT_PREDICTION_BRIGHTNESS)
         assert adapter.prediction_secs == DEFAULT_PREDICTION_SECS

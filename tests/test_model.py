@@ -273,7 +273,7 @@ async def test_disable():
 
     # Disable the segment.
     mock_adapter.is_on = True
-    mock_adapter.is_enabled = False
+    mock_adapter.is_segment_enabled = False
     motion_dimmer.triggered_callback()
     motion_dimmer.predicter_callback()
     motion_dimmer.periodic_callback()
@@ -317,6 +317,7 @@ async def test_cause_temp_disable():
 
     # Motion dimmer is temporarily disabled.
     assert event_keys(events) == disable_events
+    assert get_event_value(events, "set_temporarily_disabled", "secs") == 600
 
     # Manually turn on the light while the triggers are on.
     mock_adapter._state_change = DimmerStateChange(False, True, 0, 255)
@@ -358,7 +359,7 @@ async def test_cause_temp_disable():
 
     # Manually change light while Motion Dimmer is disabled.
     mock_adapter._state_change = DimmerStateChange(False, True, 0, 255)
-    mock_adapter.is_enabled = False
+    mock_adapter.is_segment_enabled = False
     mock_adapter.are_triggers_on = False
     motion_dimmer.dimmer_state_callback()
     events = mock_adapter.flush_events()
