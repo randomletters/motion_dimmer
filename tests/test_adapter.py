@@ -4,6 +4,7 @@ import logging
 
 from freezegun import freeze_time
 from homeassistant.components.datetime import DOMAIN as DATETIME_DOMAIN
+from homeassistant.components.script import DOMAIN as SCRIPT_DOMAIN
 from homeassistant.components.light import (
     ColorMode,
 )
@@ -50,8 +51,8 @@ async def test_home_assistant_adapter(hass: HomeAssistant):
         assert adapter.brightness == 255
         assert adapter.brightness_min == from_pct(DEFAULT_MIN_BRIGHTNESS)
         assert adapter.color_mode == ColorMode.WHITE
-        assert adapter.color_temp == None
-        assert adapter.rgb_color == None
+        assert adapter.color_temp is None
+        assert adapter.rgb_color is None
         delta = (now() - adapter.disabled_until).total_seconds()
         assert -1 < delta < 1
         assert adapter.extension_max == DEFAULT_EXTENSION_MAX
@@ -87,3 +88,15 @@ async def test_home_assistant_adapter(hass: HomeAssistant):
         assert event_extract(events, "service") == "turn_off"
 
         await advance_time(hass, 1000, frozen_time)
+
+        events.clear()
+        await adapter.async_turn_on_script()
+        await hass.async_block_till_done()
+        assert event_extract(events, "domain") == SCRIPT_DOMAIN
+
+        # Test having no script.
+        events.clear()
+        adapter.data.script = None
+        await adapter.async_turn_on_script()
+        await hass.async_block_till_done()
+        assert event_extract(events, "domain") is None

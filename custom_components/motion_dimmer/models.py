@@ -266,7 +266,7 @@ class MotionDimmerHA(MotionDimmerAdapter):
     def are_triggers_on(self) -> bool:
         """True if any of the triggers are on."""
         for trigger in self.data.triggers:
-            if self.hass.states.get(trigger).state == "on":
+            if self.hass.states.is_state(trigger, "on"):
                 return True
 
         return False
@@ -283,7 +283,7 @@ class MotionDimmerHA(MotionDimmerAdapter):
     def brightness_min(self) -> float:
         """The minimum brightness needed to activate the dimmer."""
         entity_id = self.external_id(CE.MIN_BRIGHTNESS)
-        return float(self.hass.states.get(entity_id).state) * 255 / 100
+        return float(self.hass.states.get(entity_id).state) * 2.55
 
     @property
     def color_mode(self) -> str:
@@ -328,44 +328,29 @@ class MotionDimmerHA(MotionDimmerAdapter):
     @property
     def is_dimmer_on(self) -> bool:
         """Is the dimmer currently on."""
-        state = self.hass.states.get(self.data.dimmer)
-        if state:
-            return state.state == "on"
-
-        return False  # pragma: no cover
+        return self.hass.states.is_state(self.data.dimmer, "on")
 
     @property
     def is_enabled(self) -> bool:
         """Return true if segment is enabled."""
-        if state := self.hass.states.get(
-            self.external_id(CE.SEG_LIGHT, self.segment_id)
-        ):
-            return state.state == "on"
-
-        return False  # pragma: no cover
+        return self.hass.states.is_state(
+            self.external_id(CE.SEG_LIGHT, self.segment_id), "on"
+        )
 
     @property
     def is_on(self) -> bool:
         """Is Motion Dimmer enabled"""
-        state = self.hass.states.get(self.external_id(CE.CONTROL_SWITCH))
-        if state:
-            return state.state == "on"
-
-        return False  # pragma: no cover
+        return self.hass.states.is_state(self.external_id(CE.CONTROL_SWITCH), "on")
 
     @property
     def prediction_brightness(self) -> float:
         """The brightness of the predictive activation."""
-        if not self.data.predicters:  # pragma: no cover
-            return 0
         entity_id = self.external_id(CE.PREDICTION_BRIGHTNESS)
         return float(self.hass.states.get(entity_id).state) * 255 / 100
 
     @property
     def prediction_secs(self) -> float:
         """The number of seconds to activate a prediction."""
-        if not self.data.predicters:
-            return 0  # pragma: no cover
         entity_id = self.external_id(CE.PREDICTION_SECS)
         return float(self.hass.states.get(entity_id).state)
 
@@ -382,8 +367,6 @@ class MotionDimmerHA(MotionDimmerAdapter):
         entity_id = self.external_id(CE.SEG_SECONDS, self.segment_id)
         if state := self.hass.states.get(entity_id):
             return float(state.state)
-
-        return 0  # pragma: no cover
 
     @property
     def segment_id(self) -> str:
@@ -443,13 +426,13 @@ class MotionDimmerHA(MotionDimmerAdapter):
         """Get the entity id from entity data."""
         return external_id(self.hass, ced, self.data.device_id, seg_id)
 
-    def schedule_periodic_timer(self, time, callback) -> None:
+    def schedule_periodic_timer(self, time: datetime, callback) -> None:
         """Start the periodic timer to check triggers."""
         asyncio.run_coroutine_threadsafe(
             self.async_schedule_periodic_timer(time, callback), self.hass.loop
         ).result()
 
-    async def async_schedule_periodic_timer(self, time, callback) -> None:
+    async def async_schedule_periodic_timer(self, time: datetime, callback) -> None:
         """Start the periodic timer to check triggers."""
         self._cancel_periodic_timer = async_track_point_in_time(
             self.hass,
@@ -461,13 +444,13 @@ class MotionDimmerHA(MotionDimmerAdapter):
             time,
         )
 
-    def schedule_pump_timer(self, time, callback) -> None:
+    def schedule_pump_timer(self, time: datetime, callback) -> None:
         """Start the periodic timer to check triggers."""
         asyncio.run_coroutine_threadsafe(
             self.async_schedule_pump_timer(time, callback), self.hass.loop
         ).result()
 
-    async def async_schedule_pump_timer(self, time, callback) -> None:
+    async def async_schedule_pump_timer(self, time: datetime, callback) -> None:
         """Pump the dimmer for a short time."""
         async_track_point_in_time(
             self.hass,
@@ -561,7 +544,7 @@ class MotionDimmerHA(MotionDimmerAdapter):
     async def async_turn_on_script(self) -> None:
         """Turn on script."""
         if not self.data.script:
-            return  # pragma: no cover
+            return
 
         args = {
             ATTR_ENTITY_ID: self.data.script,
@@ -615,51 +598,6 @@ class MotionDimmer:
         return self._adapter
 
     @property
-    def end_time(self) -> datetime:
-        """Get the storage adapter."""
-        return self._timer_end_time
-
-    @property
-    def duration(self) -> str:
-        """Get the storage adapter."""
-        return self._timer_duration
-
-    @property
-    def is_enabled(self) -> bool:
-        """Return true if device is enabled."""
-        if not self.adapter.is_on:
-            return False
-
-        if self.is_temporarily_disabled:
-            return False
-
-        return self.adapter.is_enabled
-
-    @property
-    def is_temporarily_disabled(self) -> bool:
-        """Return true if device is temporarily disabled."""
-        return now() < self.adapter.disabled_until
-
-    @property
-    def dimmer_on_seconds(self) -> int:
-        """Number of seconds the dimmer was on."""
-        start_dt = self._dimmer_time_on
-        end_dt = now()
-        diff = end_dt - start_dt
-        return round(diff.total_seconds())
-
-    @property
-    def dimmer_off_seconds(self) -> int:
-        """Number of seconds the dimmer was off."""
-        if self.adapter.is_dimmer_on:
-            return 0
-
-        start_dt = self._dimmer_time_off
-        end_dt = now()
-        diff = end_dt - start_dt
-        return round(diff.total_seconds())
-
-    @property
     def additional_time(self) -> int:
         """Amount of time to add to the timer."""
         # Initialize the attribute.
@@ -684,9 +622,171 @@ class MotionDimmer:
         return total
 
     @property
+    def dimmer_on_seconds(self) -> int:
+        """Number of seconds the dimmer was on."""
+        start_dt = self._dimmer_time_on
+        end_dt = now()
+        diff = end_dt - start_dt
+        return round(diff.total_seconds())
+
+    @property
+    def dimmer_off_seconds(self) -> int:
+        """Number of seconds the dimmer was off."""
+        if self.adapter.is_dimmer_on:
+            return 0
+
+        start_dt = self._dimmer_time_off
+        end_dt = now()
+        diff = end_dt - start_dt
+        return round(diff.total_seconds())
+
+    @property
+    def duration(self) -> str:
+        """Get the storage adapter."""
+        return self._timer_duration
+
+    @property
+    def end_time(self) -> datetime:
+        """Get the storage adapter."""
+        return self._timer_end_time
+
+    @property
+    def is_enabled(self) -> bool:
+        """Return true if device is enabled."""
+        if not self.adapter.is_on:
+            return False
+
+        if self.is_temporarily_disabled:
+            return False
+
+        return self.adapter.is_enabled
+
+    @property
+    def is_temporarily_disabled(self) -> bool:
+        """Return true if device is temporarily disabled."""
+        return now() < self.adapter.disabled_until
+
+    @property
     def seconds(self) -> float:
         """Number of seconds to turn the dimmer on."""
         return self.adapter.seconds + self._additional_time
+
+    def add_time(self) -> None:
+        """Add time to the timer."""
+        self._additional_time = self.additional_time
+
+    def dimmer_state_callback(self, *args, **kwargs) -> None:
+        """Check if dimmer was changed manually."""
+        if not self.is_enabled:
+            return
+
+        # Compare states.
+        change = self.adapter.dimmer_state_callback(*args, **kwargs)
+        same_state = change.was_on == change.is_on
+        same_bright = change.old_brightness == change.new_brightness
+        # Don't worry about changes in color or temp.
+
+        if not same_state:
+            if change.is_on != self.adapter.are_triggers_on:
+                if not self._is_prediction:
+                    self.disable_temporarily()
+        elif not same_bright and not self._is_pump:
+            # Give a 1 percent margin of error.
+            bright = self.adapter.brightness
+            if change.new_brightness + 1 < bright or change.new_brightness - 1 > bright:
+                self.disable_temporarily()
+
+    def disable_temporarily(self) -> None:
+        """Disable all functionality for a time."""
+        seconds = self.adapter.seconds
+        if seconds and int(seconds) > 0:
+            delay = timedelta(seconds=int(seconds))
+            next_time = now() + delay
+        else:
+            return  # pragma: no cover
+
+        # Only set a new disable if it is later than the old one.
+        if self.adapter.disabled_until < next_time:
+            # Schedule the timer to turn off dimmer after it is reenabled.
+            buffer = timedelta(seconds=5)
+            self.adapter.schedule_timer(
+                next_time + buffer, str(delay + buffer), self.timer_callback
+            )
+            self.adapter.set_temporarily_disabled(next_time)
+
+    def init_timer(self, *args, **kwargs) -> None:
+        """Init timer."""
+        timer = self.adapter.timer
+        self._timer_end_time = timer.end_time
+        self._timer_duration = timer.duration
+
+        # Check if timer was running on HA shutdown.
+        if timer.end_time and timer.end_time > now():
+            # Restart timer because it hasn't finished.
+            self.schedule_timer(timer.end_time, timer.duration)
+        elif timer.end_time and timer.state == SENSOR_ACTIVE:
+            # Finish timer.
+            self.timer_callback()
+
+    def periodic_callback(self, *args, **kwargs) -> None:
+        """Repeatedly check the triggers to reset the timer."""
+        # Check if the segment has been disabled or we have transitioned
+        # to a disabled segment.
+        if self.is_enabled:
+            if self.adapter.are_triggers_on:
+                self.start_dimmer()
+            else:
+                self.schedule_periodic_timer()
+
+    def predicter_callback(self, *args, **kwargs) -> None:
+        """Run when predicters are activated."""
+        # Do nothing if the dimmer is already on.
+        if self.adapter.is_dimmer_on:
+            return
+
+        self.start_dimmer(is_prediction=True)
+
+    def pump_callback(self, *args, **kwargs) -> None:
+        """Turn on the dimmer to normal brightness after pump."""
+        self.start_dimmer()
+
+    def reset_dimmer_time_off(self) -> None:
+        """Reset dimmer time off."""
+        self._dimmer_time_off = now()
+
+    def reset_dimmer_time_on(self) -> None:
+        """Reset dimmer time on."""
+        self._dimmer_time_on = now()
+
+    def schedule_periodic_timer(self) -> None:
+        """Start the periodic timer to check triggers."""
+        trigger_interval = self.adapter.trigger_interval
+        if trigger_interval == 0:
+            return
+
+        next_time = now() + timedelta(seconds=trigger_interval)
+        self.adapter.cancel_periodic_timer()
+        self.adapter.schedule_periodic_timer(next_time, self.periodic_callback)
+
+    def schedule_pump_timer(self) -> None:
+        """Pump the dimmer for a short time."""
+        next_time = now() + timedelta(seconds=PUMP_TIME)
+        self.adapter.schedule_pump_timer(next_time, self.pump_callback)
+
+    def schedule_timer(
+        self, next_time: datetime | None = None, duration: str | None = None
+    ) -> None:
+        """Start a timer."""
+
+        if not next_time:
+            seconds = self.seconds
+            delay = timedelta(seconds=seconds)
+            duration = str(delay)
+            next_time = now() + delay
+
+        self.adapter.cancel_timer()
+        self.adapter.schedule_timer(next_time, duration, self.timer_callback)
+        self.track_timer(next_time, duration, SENSOR_ACTIVE)
 
     def start_dimmer(self, is_prediction=False) -> None:
         """Turn on the dimmer."""
@@ -739,22 +839,6 @@ class MotionDimmer:
                 if not self._was_dimmer_on:
                     self.adapter.turn_on_script()
 
-    def track_timer(self, timer_end, duration, state) -> None:
-        """Store changes in timer."""
-        self._timer_end_time = timer_end
-        self._timer_duration = duration
-        self.adapter.track_timer(timer_end, duration, state)
-
-    def turn_on_dimmer(self, brightness: int | None = None):
-        """Turn on the dimmer."""
-        self.adapter.turn_on_dimmer(
-            brightness=brightness or self.adapter.brightness,
-            color_mode=self.adapter.color_mode,
-            color_temp=self.adapter.color_temp,
-            rgb_color=self.adapter.rgb_color,
-            transition=1,
-        )
-
     def stop_dimmer(self) -> None:
         """Turn off the dimmer."""
         if self.adapter.is_on and not self.is_temporarily_disabled:
@@ -773,130 +857,29 @@ class MotionDimmer:
         else:
             self.track_timer(now(), "00:00:00", SENSOR_IDLE)
 
-    def dimmer_state_callback(self, *args, **kwargs) -> None:
-        """Check if dimmer was changed manually."""
-        if not self.is_enabled:
-            return
+    def timer_callback(self, *args, **kwargs) -> None:
+        """Turn off the dimmer because timer ran out."""
+        self.stop_dimmer()
 
-        # Compare states.
-        change = self.adapter.dimmer_state_callback(*args, **kwargs)
-        same_state = change.was_on == change.is_on
-        same_bright = change.old_brightness == change.new_brightness
-        # Don't worry about changes in color or temp.
-
-        if not same_state:
-            if change.is_on != self.adapter.are_triggers_on:
-                if not self._is_prediction:
-                    self.disable_temporarily()
-        elif not same_bright and not self._is_pump:
-            # Give a 1 percent margin of error.
-            bright = self.adapter.brightness
-            if change.new_brightness + 1 < bright or change.new_brightness - 1 > bright:
-                self.disable_temporarily()
-
-    def disable_temporarily(self) -> None:
-        """Disable all functionality for a time."""
-        seconds = self.adapter.seconds
-        if seconds and int(seconds) > 0:
-            delay = timedelta(seconds=int(seconds))
-            next_time = now() + delay
-        else:
-            return  # pragma: no cover
-
-        # Only set a new disable if it is later than the old one.
-        if self.adapter.disabled_until < next_time:
-            # Schedule the timer to turn off dimmer after it is reenabled.
-            buffer = timedelta(seconds=5)
-            self.adapter.schedule_timer(
-                next_time + buffer, str(delay + buffer), self.timer_callback
-            )
-            self.adapter.set_temporarily_disabled(next_time)
+    def track_timer(self, timer_end, duration, state) -> None:
+        """Store changes in timer."""
+        self._timer_end_time = timer_end
+        self._timer_duration = duration
+        self.adapter.track_timer(timer_end, duration, state)
 
     def triggered_callback(self, *args, **kwargs) -> None:
         """Run when triggers are activated."""
         self.start_dimmer()
 
-    def predicter_callback(self, *args, **kwargs) -> None:
-        """Run when predicters are activated."""
-        # Do nothing if the dimmer is already on.
-        if self.adapter.is_dimmer_on:
-            return
-
-        self.start_dimmer(is_prediction=True)
-
-    def pump_callback(self, *args, **kwargs) -> None:
-        """Turn on the dimmer to normal brightness after pump."""
-        self.start_dimmer()
-
-    def timer_callback(self, *args, **kwargs) -> None:
-        """Turn off the dimmer because timer ran out."""
-        self.stop_dimmer()
-
-    def periodic_callback(self, *args, **kwargs) -> None:
-        """Repeatedly check the triggers to reset the timer."""
-        # Check if the segment has been disabled or we have transitioned
-        # to a disabled segment.
-        if self.is_enabled:
-            if self.adapter.are_triggers_on:
-                self.start_dimmer()
-            else:
-                self.schedule_periodic_timer()
-
-    def schedule_timer(
-        self, next_time: datetime | None = None, duration: str | None = None
-    ) -> None:
-        """Start a timer."""
-
-        if not next_time:
-            seconds = self.seconds
-            delay = timedelta(seconds=seconds)
-            duration = str(delay)
-            next_time = now() + delay
-
-        self.adapter.cancel_timer()
-        self.adapter.schedule_timer(next_time, duration, self.timer_callback)
-        self.track_timer(next_time, duration, SENSOR_ACTIVE)
-
-    def init_timer(self, *args, **kwargs) -> None:
-        """Init timer."""
-        timer = self.adapter.timer
-        self._timer_end_time = timer.end_time
-        self._timer_duration = timer.duration
-
-        # Check if timer was running on HA shutdown.
-        if timer.end_time and timer.end_time > now():
-            # Restart timer because it hasn't finished.
-            self.schedule_timer(timer.end_time, timer.duration)
-        elif timer.end_time and timer.state == SENSOR_ACTIVE:
-            # Finish timer.
-            self.timer_callback()
-
-    def schedule_periodic_timer(self) -> None:
-        """Start the periodic timer to check triggers."""
-        trigger_interval = self.adapter.trigger_interval
-        if trigger_interval == 0:
-            return
-
-        next_time = now() + timedelta(seconds=trigger_interval)
-        self.adapter.cancel_periodic_timer()
-        self.adapter.schedule_periodic_timer(next_time, self.periodic_callback)
-
-    def schedule_pump_timer(self) -> None:
-        """Pump the dimmer for a short time."""
-        next_time = now() + timedelta(seconds=PUMP_TIME)
-        self.adapter.schedule_pump_timer(next_time, self.pump_callback)
-
-    def add_time(self) -> None:
-        """Add time to the timer."""
-        self._additional_time = self.additional_time
-
-    def reset_dimmer_time_on(self) -> None:
-        """Reset dimmer time on."""
-        self._dimmer_time_on = now()
-
-    def reset_dimmer_time_off(self) -> None:
-        """Reset dimmer time off."""
-        self._dimmer_time_off = now()
+    def turn_on_dimmer(self, brightness: int | None = None):
+        """Turn on the dimmer."""
+        self.adapter.turn_on_dimmer(
+            brightness=brightness or self.adapter.brightness,
+            color_mode=self.adapter.color_mode,
+            color_temp=self.adapter.color_temp,
+            rgb_color=self.adapter.rgb_color,
+            transition=1,
+        )
 
 
 @dataclass
