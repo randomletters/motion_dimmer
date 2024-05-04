@@ -1,4 +1,4 @@
-"""Test Motion Dimmer setup process."""
+"""Test Motion Dimmer features."""
 
 import logging
 from freezegun import freeze_time

@@ -1,4 +1,4 @@
-"""Test Motion Dimmer setup process."""
+"""Test Motion Dimmer models."""
 
 import logging
 from datetime import timedelta

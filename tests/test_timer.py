@@ -1,4 +1,4 @@
-"""Test Motion Dimmer setup process."""
+"""Test Motion Dimmer timer."""
 
 import logging
 
