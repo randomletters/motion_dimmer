@@ -11,7 +11,6 @@ from homeassistant.components.light import (
     ATTR_RGB_COLOR,
     ColorMode,
 )
-from homeassistant.core import HomeAssistant
 from homeassistant.util.dt import now
 
 from custom_components.motion_dimmer.const import (

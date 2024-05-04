@@ -3,43 +3,30 @@
 import logging
 from freezegun import freeze_time
 from homeassistant.util.dt import utcnow
-from homeassistant.core import HomeAssistant, State
+from homeassistant.core import HomeAssistant
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
 )
 from pytest_homeassistant_custom_component.common import (
     async_capture_events,
-    mock_state_change_event,
 )
 
 from custom_components.motion_dimmer.const import (
-    DEFAULT_PREDICTION_BRIGHTNESS,
-    DEFAULT_PREDICTION_SECS,
-    DEFAULT_MANUAL_OVERRIDE,
     PUMP_TIME,
     ControlEntities,
 )
 from tests import (
     advance_time,
     dimmer_is_not_temporarily_disabled,
-    dimmer_is_off,
     dimmer_is_set_to,
     from_pct,
-    get_disable_delta,
     let_dimmer_turn_off,
     set_number_field_to,
     set_segment_light_to,
     setup_integration,
-    event_extract,
     trigger_motion_dimmer,
-    turn_off_trigger,
-    turn_on_segment,
 )
 
-from .const import (
-    MOCK_LIGHT_1_ID,
-    SMALL_TIME,
-)
 
 logging.basicConfig(level=logging.ERROR, force=True)
 _LOGGER = logging.getLogger(__name__)
