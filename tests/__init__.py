@@ -3,19 +3,18 @@
 from copy import deepcopy
 from datetime import datetime, timedelta
 from typing import Any
-from homeassistant.components.light import ColorMode
+
+from homeassistant.components.light import (
+    ATTR_BRIGHTNESS,
+    ColorMode,
+)
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.setup import async_setup_component, logging
 from homeassistant.util.dt import now, parse_duration
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
-    async_capture_events,
     async_fire_time_changed,
-    async_fire_time_changed_exact,
-)
-from homeassistant.components.light import (
-    ATTR_BRIGHTNESS,
 )
 
 from custom_components.motion_dimmer.const import (
@@ -52,7 +51,6 @@ from .const import (
     MOCK_SCRIPTS,
     SCRIPT_DOMAIN,
 )
-
 
 _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.ERROR, force=True)
@@ -111,7 +109,6 @@ async def setup_integration(
         source=source,
         data=deepcopy(config),
         options=deepcopy(options),
-        # entry_id=entry_id,
         unique_id=unique_id,
     )
     config_entry.add_to_hass(hass)
@@ -159,7 +156,7 @@ def to_pct(num: float) -> float:
     return round(num / 2.55, 2)
 
 
-async def dimmer_is_set_to(events: list, values: dict):
+async def dimmer_is_set_to(events: list[Event], values: dict):
     """Check that the dimmer is set to the desired value."""
     assert event_extract(events, "domain") == LIGHT_DOMAIN
     assert event_extract(events, "service") == "turn_on"
@@ -249,37 +246,44 @@ async def call_service(hass, service, data):
 
 
 def secs(time: datetime):
+    """Get number of seconds until a datetime."""
     return round((time - now()).total_seconds())
 
 
 def dur(duration: str):
+    """Get number of seconds from a duration string."""
     return round(parse_duration(duration).total_seconds())
 
 
-def event_keys(events: list[dict]) -> list:
+def entry_keys(log: list[dict]) -> list:
+    """Get a list of keys from the log."""
     keys = []
-    for event in events:
-        keys.append(list(event.keys())[0])
+    for entry in log:
+        keys.append(list(entry.keys())[0])
     return keys
 
 
-def has_event(events: list[dict], key) -> bool:
-    for event in events:
-        if event.get(key):
+def has_entry(log: list[dict], key) -> bool:
+    """Check if log has entry based on key."""
+    for entry in log:
+        if entry.get(key):
             return True
 
     return False
 
 
-def get_event_value(events: list[dict], key, subkey) -> Any:
-    for event in events:
-        if event.get(key) and event.get(key).get(subkey):
-            return event.get(key).get(subkey)
+def get_entry_value(log: list[dict], key, subkey) -> Any:
+    """Return the value of a log entry based on key."""
+    for entry in log:
+        if entry.get(key) and entry.get(key).get(subkey):
+            return entry.get(key).get(subkey)
 
     return None
 
 
 class MockAdapter(MotionDimmerAdapter):
+    """Mock adapter for testing."""
+
     # Override the properties so they can be set manually.
     are_triggers_on: bool = False
     brightness_min: int = 0
@@ -303,7 +307,7 @@ class MockAdapter(MotionDimmerAdapter):
 
     def __init__(self):
         # Initialize with the default values.
-        self._events: list = []
+        self._log: list = []
         self.are_triggers_on = False
         self.brightness_min = DEFAULT_MIN_BRIGHTNESS
         self.disabled_until = now()
@@ -324,23 +328,24 @@ class MockAdapter(MotionDimmerAdapter):
         self.timer = TimerState(now(), "00:00:00", SENSOR_IDLE)
         self._state_change = None
 
-    def flush_events(self):
-        events = self._events
-        self._events = []
-        return events
+    def flush_entries(self):
+        """Return the entries and clear the log."""
+        log = self._log
+        self._log = []
+        return log
 
     def cancel_periodic_timer(self) -> None:
-        self._events.append({"cancel_periodic_timer": True})
+        self._log.append({"cancel_periodic_timer": True})
 
     def cancel_timer(self) -> None:
-        self._events.append({"cancel_timer": True})
+        self._log.append({"cancel_timer": True})
 
     def dimmer_state_callback(self, *args, **kwargs) -> None:
-        self._events.append({"dimmer_state_callback": kwargs})
+        self._log.append({"dimmer_state_callback": kwargs})
         return self._state_change
 
     def schedule_periodic_timer(self, time, callback) -> None:
-        self._events.append(
+        self._log.append(
             {
                 "schedule_periodic_timer": {
                     "secs": secs(time),
@@ -350,7 +355,7 @@ class MockAdapter(MotionDimmerAdapter):
         )
 
     def schedule_pump_timer(self, time, callback) -> None:
-        self._events.append(
+        self._log.append(
             {
                 "schedule_pump_timer": {
                     "secs": secs(time),
@@ -360,7 +365,7 @@ class MockAdapter(MotionDimmerAdapter):
         )
 
     def schedule_timer(self, time: datetime, duration: str, callback) -> None:
-        self._events.append(
+        self._log.append(
             {
                 "schedule_timer": {
                     "secs": secs(time),
@@ -371,10 +376,10 @@ class MockAdapter(MotionDimmerAdapter):
         )
 
     def set_temporarily_disabled(self, next_time: datetime):
-        self._events.append({"set_temporarily_disabled": {"secs": secs(next_time)}})
+        self._log.append({"set_temporarily_disabled": {"secs": secs(next_time)}})
 
     def track_timer(self, timer_end, duration, state) -> None:
-        self._events.append(
+        self._log.append(
             {
                 "track_timer": {
                     "secs": secs(timer_end),
@@ -385,10 +390,10 @@ class MockAdapter(MotionDimmerAdapter):
         )
 
     def turn_on_dimmer(self, **kwargs) -> None:
-        self._events.append({"turn_on_dimmer": kwargs})
+        self._log.append({"turn_on_dimmer": kwargs})
 
     def turn_off_dimmer(self) -> None:
-        self._events.append({"turn_off_dimmer": True})
+        self._log.append({"turn_off_dimmer": True})
 
     def turn_on_script(self) -> None:
-        self._events.append({"turn_on_script": True})
+        self._log.append({"turn_on_script": True})

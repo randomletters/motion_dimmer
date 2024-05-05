@@ -7,6 +7,8 @@ from homeassistant.components.datetime import DOMAIN as DATETIME_DOMAIN
 from homeassistant.components.script import DOMAIN as SCRIPT_DOMAIN
 from homeassistant.components.light import (
     ColorMode,
+    ATTR_COLOR_TEMP,
+    ATTR_RGB_COLOR,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.util.dt import now, utcnow
@@ -31,6 +33,7 @@ from tests import (
     event_extract,
     from_pct,
     setup_integration,
+    set_segment_light_to,
 )
 
 from .const import (
@@ -70,18 +73,33 @@ async def test_home_assistant_adapter(hass: HomeAssistant):
         assert -1 < delta < 1
         assert timer.duration == "00:00:00"
 
+        # Change color temp to test color mode.
+        await set_segment_light_to(hass, "seg_1", "turn_on", {ATTR_COLOR_TEMP: 500})
+        assert adapter.color_temp == 500
+        assert adapter.color_mode == ColorMode.COLOR_TEMP
+
+        # Change color to test color mode.
+        await set_segment_light_to(
+            hass, "seg_1", "turn_on", {ATTR_RGB_COLOR: (255, 0, 0)}
+        )
+        assert adapter.rgb_color == (255, 0, 0)
+        assert adapter.color_mode == ColorMode.RGB
+
+        # Test setting temporary disable.
         events = async_capture_events(hass, "call_service")
         await adapter.async_set_temporarily_disabled(now())
         await hass.async_block_till_done()
         assert event_extract(events, "domain") == DATETIME_DOMAIN
         assert event_extract(events, "service") == "set_value"
 
+        # Test turn on dimmer.
         events.clear()
         await adapter.async_turn_on_dimmer()
         await hass.async_block_till_done()
         assert event_extract(events, "domain") == LIGHT_DOMAIN
         assert event_extract(events, "service") == "turn_on"
 
+        # Test turn off dimmer.
         events.clear()
         await adapter.async_turn_off_dimmer()
         await hass.async_block_till_done()
@@ -90,6 +108,7 @@ async def test_home_assistant_adapter(hass: HomeAssistant):
 
         await advance_time(hass, 1000, frozen_time)
 
+        # Test turn on script.
         events.clear()
         await adapter.async_turn_on_script()
         await hass.async_block_till_done()
