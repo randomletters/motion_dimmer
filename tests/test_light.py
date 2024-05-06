@@ -1,15 +1,19 @@
-"""Test Motion Dimmer setup process."""
+"""Test Motion Dimmer light."""
 
 import logging
+
 from freezegun import freeze_time
-from homeassistant.util.dt import utcnow
-from homeassistant.core import HomeAssistant
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP,
     ATTR_RGB_COLOR,
     ATTR_TRANSITION,
     ATTR_WHITE,
+)
+from homeassistant.core import HomeAssistant
+from homeassistant.util.dt import utcnow
+from pytest_homeassistant_custom_component.common import (
+    async_capture_events,
 )
 
 from custom_components.motion_dimmer.const import (
@@ -20,10 +24,10 @@ from custom_components.motion_dimmer.models import external_id
 from tests import (
     advance_time,
     dimmer_is_set_to,
+    event_extract,
     let_dimmer_turn_off,
     set_segment_light_to,
     setup_integration,
-    event_extract,
     trigger_motion_dimmer,
 )
 
@@ -31,11 +35,6 @@ from .const import (
     CONFIG_NAME,
     MOCK_BINARY_SENSOR_1_ID,
     SWITCH_DOMAIN,
-)
-
-from pytest_homeassistant_custom_component.common import (
-    async_capture_events,
-    mock_state_change_event,
 )
 
 _LOGGER = logging.getLogger(__name__)

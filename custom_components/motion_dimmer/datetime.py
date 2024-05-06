@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import datetime
+from datetime import datetime
 import logging
 
 from homeassistant.components.datetime import DateTimeEntity
@@ -44,9 +44,7 @@ class MotionDimmerDateTime(MotionDimmerEntity, DateTimeEntity, RestoreEntity):
         """Restore last state."""
         last_state = await self.async_get_last_state()
         if last_state:
-            self._attr_native_value = datetime.datetime.fromisoformat(
-                str(last_state.state)
-            )
+            self._attr_native_value = datetime.fromisoformat(str(last_state.state))
         else:
             self._attr_native_value = now()
 

@@ -1,4 +1,4 @@
-"""Test Motion Dimmer setup process."""
+"""Test Motion Dimmer services."""
 
 import logging
 
@@ -9,9 +9,6 @@ from homeassistant.helpers import entity_registry as er
 
 from custom_components.motion_dimmer.const import (
     DEFAULT_MANUAL_OVERRIDE,
-    # SERVICE_HOURS,
-    # SERVICE_MINUTES,
-    # SERVICE_SECONDS,
     SENSOR_DURATION,
     SENSOR_END_TIME,
     SERVICE_DISABLE,
@@ -24,7 +21,6 @@ from custom_components.motion_dimmer.models import external_id
 from tests import (
     get_disable_delta,
     setup_integration,
-    advance_time,
     turn_off_trigger,
     turn_on_segment,
     trigger_motion_dimmer,
@@ -34,7 +30,6 @@ from tests import (
 
 from .const import (
     CONFIG_NAME,
-    # MOCK_BINARY_SENSOR_2_ID,,
 )
 
 

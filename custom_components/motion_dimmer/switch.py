@@ -10,12 +10,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.util.dt import now
 
 from .const import (
     DOMAIN,
-    SENSOR_DURATION,
-    SENSOR_END_TIME,
     ControlEntities as CE,
 )
 from .models import MotionDimmerData, MotionDimmerEntity, internal_id

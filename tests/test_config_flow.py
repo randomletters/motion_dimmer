@@ -1,4 +1,4 @@
-"""Test the SmartThinQ sensors config flow."""
+"""Test the config flow."""
 
 import logging
 
