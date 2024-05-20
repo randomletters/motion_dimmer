@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.event import (
     async_track_state_change,
+    async_track_state_change_event,
 )
 from .const import (
     CONF_DIMMER,
@@ -92,7 +93,7 @@ async def async_setup_entry(
     # Add dimmer state listener
     if data.dimmer:
         # adapter = data.motion_dimmer.adapter
-        async_track_state_change(
+        async_track_state_change_event(
             hass,
             data.dimmer,
             data.motion_dimmer.dimmer_state_callback,

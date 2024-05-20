@@ -6,6 +6,7 @@ from homeassistant.util.dt import utcnow
 from homeassistant.core import HomeAssistant
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
+    ATTR_COLOR_TEMP,
 )
 from pytest_homeassistant_custom_component.common import (
     async_capture_events,
@@ -20,12 +21,14 @@ from tests import (
     dimmer_is_not_temporarily_disabled,
     dimmer_is_set_to,
     from_pct,
+    get_disable_delta,
     let_dimmer_turn_off,
     set_number_field_to,
     set_segment_light_to,
     setup_integration,
     trigger_motion_dimmer,
 )
+from tests.const import LIGHT_DOMAIN, MOCK_LIGHT_1_ID
 
 
 logging.basicConfig(level=logging.ERROR, force=True)
@@ -99,138 +102,38 @@ async def test_pump(hass: HomeAssistant):
         assert await config_entry.async_unload(hass)
         await hass.async_block_till_done()
 
-        # assert events == []
 
-        # async def test_prediction(hass: HomeAssistant):
-        #     """Test the integration setup."""
-        #     with freeze_time(utcnow()) as frozen_time:
-        #         config_entry = await setup_integration(hass)
-        #         await turn_on_segment(hass)
+async def test_callbacks(hass: HomeAssistant):
+    """Test the minimum brightness."""
+    with freeze_time(utcnow()) as frozen_time:
+        config_entry = await setup_integration(hass)
+        events = async_capture_events(hass, "call_service")
 
-        #         # Trigger a prediction.
-        #         events = await trigger_motion_dimmer(hass, True)
+        await set_number_field_to(hass, ControlEntities.TRIGGER_INTERVAL, 0)
+        await set_number_field_to(hass, ControlEntities.SEG_SECONDS, 10, "seg_1")
+        await set_number_field_to(hass, ControlEntities.EXTENSION_MAX, 0)
 
-        #         # Dimmer is set to prediction brightness.
-        #         await dimmer_is_set_to(
-        #             events, {ATTR_BRIGHTNESS: from_pct(DEFAULT_PREDICTION_BRIGHTNESS)}
-        #         )
-        #         await dimmer_is_not_temporarily_disabled(hass)
+        # Set current segment to brightness 50.
+        await set_segment_light_to(hass, "seg_1", "turn_on", {ATTR_BRIGHTNESS: 50})
+        await hass.async_block_till_done()
 
-        #         # Allow prediction to finish.
-        #         events = async_capture_events(hass, "call_service")
-        #         await advance_time(hass, DEFAULT_PREDICTION_SECS, frozen_time)
+        events.clear()
+        await trigger_motion_dimmer(hass, frozen_time)
 
-        #         await dimmer_is_off(events)
-        #         await dimmer_is_not_temporarily_disabled(hass)
+        # Dimmer is set to brightness 50.
+        await dimmer_is_set_to(events, {ATTR_BRIGHTNESS: 50})
+        await dimmer_is_not_temporarily_disabled(hass)
 
-        # # Trigger the dimmer normally.
-        # events = await trigger_motion_dimmer(hass)
+        # Manually change light to brightness 100
+        # (include color temp because of issue with light templates)
+        await hass.services.async_call(
+            LIGHT_DOMAIN,
+            "turn_on",
+            {"entity_id": MOCK_LIGHT_1_ID, ATTR_COLOR_TEMP: 500, ATTR_BRIGHTNESS: 100},
+            True,
+        )
+        await hass.async_block_till_done()
 
-        # # Dimmer is set to brightness 255.
-        # await dimmer_is_set_to(events, {ATTR_BRIGHTNESS: 255})
-        # await dimmer_is_not_temporarily_disabled(hass)
+        assert get_disable_delta(hass) > 598
 
-        # # Trigger a prediction while dimmer is still on.
-        # events = await trigger_motion_dimmer(hass, True)
-
-        # # Dimmer is not changed.
-        # assert event_extract(events, "domain") is None
-        # await dimmer_is_not_temporarily_disabled(hass)
-
-        # await let_dimmer_turn_off(hass, frozen_time)
-
-        # # Trigger a prediction.
-        # events = await trigger_motion_dimmer(hass, True)
-
-        # # Dimmer is set to prediction brightness.
-        # await dimmer_is_set_to(
-        #     events, {ATTR_BRIGHTNESS: from_pct(DEFAULT_PREDICTION_BRIGHTNESS)}
-        # )
-        # await dimmer_is_not_temporarily_disabled(hass)
-
-        # # Don't allow prediction to finish.
-        # events = await trigger_motion_dimmer(hass)
-
-        # # Dimmer is now set to brightness 255.
-        # await dimmer_is_set_to(events, {ATTR_BRIGHTNESS: 255})
-        # await dimmer_is_not_temporarily_disabled(hass)
-
-        # await let_dimmer_turn_off(hass, frozen_time)
-
-        # assert await config_entry.async_unload(hass)
-        # await hass.async_block_till_done()
-
-        # async def test_temp_disable(hass: HomeAssistant):
-        #     """Test the integration setup."""
-        #     with freeze_time(utcnow()) as frozen_time:
-        #         config_entry = await setup_integration(hass)
-        #         await turn_on_segment(hass)
-
-        #         # Turn on light manually.
-        #         mock_state_change_event(
-        #             hass, State(MOCK_LIGHT_1_ID, "on"), State(MOCK_LIGHT_1_ID, "off")
-        #         )
-        #         await hass.async_block_till_done()
-
-        #         # Let time pass to prevent event overlap.
-        #         await advance_time(hass, SMALL_TIME, frozen_time)
-
-        #         # Motion dimmer is temporarily disabled.
-        #         assert get_disable_delta(hass) > 1
-
-        #         # Try to trigger while temp disabled.
-        #         events = await trigger_motion_dimmer(hass)
-
-        #         # Dimmer is still off.
-        #         assert event_extract(events, "domain") is None
-        #         await turn_off_trigger(hass)
-
-        #         events = async_capture_events(hass, "call_service")
-
-        #         # Let manual override (plus the buffer) time pass.
-        #         await advance_time(hass, DEFAULT_MANUAL_OVERRIDE + 5, frozen_time)
-
-        #         await dimmer_is_off(events)
-        #         await dimmer_is_not_temporarily_disabled(hass)
-
-        # # Turn on dimmer.
-        # events = await trigger_motion_dimmer(hass)
-        # await dimmer_is_not_temporarily_disabled(hass)
-
-        # # Turn off dimmer manually.
-        # mock_state_change_event(
-        #     hass, State(MOCK_LIGHT_1_ID, "off"), State(MOCK_LIGHT_1_ID, "on")
-        # )
-        # await hass.async_block_till_done()
-
-        # # Allow time for events to resolve.
-        # await advance_time(hass, 5, frozen_time)
-
-        # # Motion dimmer is temporarily disabled.
-        # assert get_disable_delta(hass) > 1
-
-        # # Wait until enabled again.
-        # await advance_time(hass, get_disable_delta(hass) + 100, frozen_time)
-
-        # # Turn on dimmer.
-        # events = await trigger_motion_dimmer(hass)
-        # await dimmer_is_not_temporarily_disabled(hass)
-
-        # # Change dimmer brightness.
-        # mock_state_change_event(
-        #     hass,
-        #     State(MOCK_LIGHT_1_ID, "on", {ATTR_BRIGHTNESS: 50}),
-        #     State(MOCK_LIGHT_1_ID, "on"),
-        # )
-        # await hass.async_block_till_done()
-
-        # # Allow time for events to resolve.
-        # await advance_time(hass, 5, frozen_time)
-
-        # # Motion dimmer is temporarily disabled.
-        # assert get_disable_delta(hass) > 1
-
-        # await let_dimmer_turn_off(hass, frozen_time)
-
-        # assert await config_entry.async_unload(hass)
-        # await hass.async_block_till_done()
+        await let_dimmer_turn_off(hass, frozen_time)

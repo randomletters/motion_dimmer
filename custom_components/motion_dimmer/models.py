@@ -15,17 +15,19 @@ from homeassistant.components.light import (
     ATTR_TRANSITION,
     ColorMode,
 )
+from homeassistant.core import Event
 from homeassistant.components.light import DOMAIN as LIGHT_DOMAIN
 from homeassistant.components.datetime import DOMAIN as DATETIME_DOMAIN
 from homeassistant.components.script import DOMAIN as SCRIPT_DOMAIN
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_FRIENDLY_NAME, ATTR_ICON
-from homeassistant.core import HassJob, HomeAssistant, State
+from homeassistant.core import HassJob, HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import (
     async_track_point_in_time,
+    EventStateChangedData,
 )
 from homeassistant.util import slugify
 from homeassistant.util.dt import now
@@ -417,12 +419,11 @@ class MotionDimmerHA(MotionDimmerAdapter):
             self._cancel_periodic_timer = None
 
     def dimmer_state_callback(
-        self,
-        changed_entity: str,
-        old_state: State | None,
-        new_state: State | None,
+        self, event: Event[EventStateChangedData]
     ) -> DimmerStateChange:
         """Check if dimmer was changed manually."""
+        old_state = event.data["old_state"]
+        new_state = event.data["new_state"]
         return DimmerStateChange(
             old_state.state == "on" if old_state else False,
             new_state.state == "on" if new_state else False,
@@ -698,7 +699,7 @@ class MotionDimmer:
         elif not same_bright and not self._is_pumping:
             # Give a 1 percent margin of error.
             diff = self.adapter.brightness - change.new_brightness
-            if -1 < diff > 1:
+            if diff < -1 or diff > 1:
                 self.disable_temporarily()
 
     def disable_temporarily(self) -> None:
