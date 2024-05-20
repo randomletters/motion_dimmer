@@ -104,7 +104,7 @@ async def test_pump(hass: HomeAssistant):
 
 
 async def test_callbacks(hass: HomeAssistant):
-    """Test the minimum brightness."""
+    """Test the callbacks."""
     with freeze_time(utcnow()) as frozen_time:
         config_entry = await setup_integration(hass)
         events = async_capture_events(hass, "call_service")
@@ -134,6 +134,7 @@ async def test_callbacks(hass: HomeAssistant):
         )
         await hass.async_block_till_done()
 
+        # Motion Dimmer disabled from brightness change.
         assert get_disable_delta(hass) > 598
 
         await let_dimmer_turn_off(hass, frozen_time)
