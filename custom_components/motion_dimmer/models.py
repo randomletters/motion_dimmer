@@ -286,6 +286,9 @@ class MotionDimmerHA(MotionDimmerAdapter):
             if bright := state.attributes.get(ATTR_BRIGHTNESS):
                 return int(bright)
 
+        # Some dimmers do not return brightness when off.
+        return 0
+
     @property
     def brightness_min(self) -> float:
         """The minimum brightness needed to activate the dimmer."""

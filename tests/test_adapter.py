@@ -9,6 +9,7 @@ from homeassistant.components.light import (
     ColorMode,
     ATTR_COLOR_TEMP,
     ATTR_RGB_COLOR,
+    ATTR_BRIGHTNESS,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.util.dt import now, utcnow
@@ -120,3 +121,7 @@ async def test_home_assistant_adapter(hass: HomeAssistant):
         await adapter.async_turn_on_script()
         await hass.async_block_till_done()
         assert event_extract(events, "domain") is None
+
+        # Change brightness to 0.
+        await set_segment_light_to(hass, "seg_1", "turn_on", {ATTR_BRIGHTNESS: 0})
+        assert adapter.brightness == 0
