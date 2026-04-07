@@ -8,7 +8,7 @@ from typing import Any
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_MODE,
-    ATTR_COLOR_TEMP,
+    ATTR_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
     ATTR_WHITE,
     ColorMode,
@@ -42,13 +42,15 @@ class MotionDimmerLight(MotionDimmerEntity, LightEntity, RestoreEntity):
         if kwargs.get(ATTR_RGB_COLOR):
             self._attr_color_mode = ColorMode.RGB
             self._attr_rgb_color = kwargs.get(ATTR_RGB_COLOR, self._attr_rgb_color)
-        if kwargs.get(ATTR_COLOR_TEMP):
+        if kwargs.get(ATTR_COLOR_TEMP_KELVIN):
             self._attr_color_mode = ColorMode.COLOR_TEMP
-            self._attr_color_temp = kwargs.get(ATTR_COLOR_TEMP, self._attr_color_temp)
+            self._attr_color_temp_kelvin = kwargs.get(
+                ATTR_COLOR_TEMP_KELVIN, self._attr_color_temp_kelvin
+            )
         if kwargs.get(ATTR_WHITE):
             self._attr_brightness = kwargs.get(ATTR_WHITE)
             self._attr_color_mode = ColorMode.WHITE
-            self._attr_color_temp = None
+            self._attr_color_temp_kelvin = None
             self._attr_rgb_color = None
         self.async_write_ha_state()
 
@@ -72,7 +74,9 @@ class MotionDimmerLight(MotionDimmerEntity, LightEntity, RestoreEntity):
             self._attr_color_mode = last_state.attributes.get(ATTR_COLOR_MODE)
             self._attr_brightness = last_state.attributes.get(ATTR_BRIGHTNESS)
             self._attr_rgb_color = last_state.attributes.get(ATTR_RGB_COLOR)
-            self._attr_color_temp = last_state.attributes.get(ATTR_COLOR_TEMP)
+            self._attr_color_temp_kelvin = last_state.attributes.get(
+                ATTR_COLOR_TEMP_KELVIN
+            )
 
         await self.async_update_ha_state(True)
 
