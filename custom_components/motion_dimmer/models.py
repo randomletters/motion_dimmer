@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
-    ATTR_COLOR_TEMP,
+    ATTR_COLOR_TEMP_KELVIN,
     ATTR_COLOR_MODE,
     ATTR_RGB_COLOR,
     ATTR_TRANSITION,
@@ -191,7 +191,7 @@ class MotionDimmerAdapter:  # pragma: no cover
         raise NotImplementedError
 
     @property
-    def color_temp(self) -> int:
+    def color_temp_kelvin(self) -> int:
         """The color temp to set the dimmer to."""
         raise NotImplementedError
 
@@ -303,11 +303,11 @@ class MotionDimmerHA(MotionDimmerAdapter):
         ).attributes.get(ATTR_COLOR_MODE)
 
     @property
-    def color_temp(self) -> int:
+    def color_temp_kelvin(self) -> int:
         """The color temp to set the dimmer to."""
         return self.hass.states.get(
             self.external_id(CE.SEG_LIGHT, self.segment_id)
-        ).attributes.get(ATTR_COLOR_TEMP)
+        ).attributes.get(ATTR_COLOR_TEMP_KELVIN)
 
     @property
     def data(self) -> MotionDimmerData:
@@ -525,7 +525,7 @@ class MotionDimmerHA(MotionDimmerAdapter):
         args[ATTR_BRIGHTNESS] = kwargs.get(ATTR_BRIGHTNESS)
         args[ATTR_TRANSITION] = kwargs.get(ATTR_TRANSITION)
         if kwargs.get(ATTR_COLOR_MODE) == ColorMode.COLOR_TEMP:
-            args[ATTR_COLOR_TEMP] = kwargs.get(ATTR_COLOR_TEMP)
+            args[ATTR_COLOR_TEMP_KELVIN] = kwargs.get(ATTR_COLOR_TEMP_KELVIN)
         if kwargs.get(ATTR_COLOR_MODE) == ColorMode.RGB:
             args[ATTR_RGB_COLOR] = kwargs.get(ATTR_RGB_COLOR)
         filtered_args = {k: v for k, v in args.items() if v is not None}
@@ -896,7 +896,7 @@ class MotionDimmer:
         self.adapter.turn_on_dimmer(
             brightness=brightness or self.adapter.brightness,
             color_mode=self.adapter.color_mode,
-            color_temp=self.adapter.color_temp,
+            color_temp_kelvin=self.adapter.color_temp_kelvin,
             rgb_color=self.adapter.rgb_color,
             transition=1,
         )

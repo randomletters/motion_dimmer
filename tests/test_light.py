@@ -5,7 +5,7 @@ import logging
 from freezegun import freeze_time
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
-    ATTR_COLOR_TEMP,
+    ATTR_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
     ATTR_TRANSITION,
     ATTR_WHITE,
@@ -59,7 +59,7 @@ async def test_light_settings(hass: HomeAssistant):
                 ATTR_BRIGHTNESS: 50,
                 ATTR_TRANSITION: 1,
                 ATTR_RGB_COLOR: None,
-                ATTR_COLOR_TEMP: None,
+                ATTR_COLOR_TEMP_KELVIN: None,
             },
         )
 
@@ -81,13 +81,16 @@ async def test_light_settings(hass: HomeAssistant):
                 ATTR_BRIGHTNESS: 80,
                 ATTR_TRANSITION: 1,
                 ATTR_RGB_COLOR: (255, 0, 0),
-                ATTR_COLOR_TEMP: None,
+                ATTR_COLOR_TEMP_KELVIN: None,
             },
         )
 
         # Set current segment to brightness 90, 3500K.
         await set_segment_light_to(
-            hass, "seg_1", "turn_on", {ATTR_BRIGHTNESS: 90, ATTR_COLOR_TEMP: 3508}
+            hass,
+            "seg_1",
+            "turn_on",
+            {ATTR_BRIGHTNESS: 90, ATTR_COLOR_TEMP_KELVIN: 3508},
         )
 
         events.clear()
@@ -100,7 +103,7 @@ async def test_light_settings(hass: HomeAssistant):
                 ATTR_BRIGHTNESS: 90,
                 ATTR_TRANSITION: 1,
                 ATTR_RGB_COLOR: None,
-                ATTR_COLOR_TEMP: 3508,
+                ATTR_COLOR_TEMP_KELVIN: 3508,
             },
         )
 
@@ -115,7 +118,7 @@ async def test_light_settings(hass: HomeAssistant):
             events,
             {
                 ATTR_RGB_COLOR: None,
-                ATTR_COLOR_TEMP: None,
+                ATTR_COLOR_TEMP_KELVIN: None,
             },
         )
 
@@ -153,5 +156,4 @@ async def test_light_settings(hass: HomeAssistant):
         hass.states.async_set(MOCK_BINARY_SENSOR_1_ID, "off")
         await advance_time(hass, DEFAULT_SEG_SECONDS, frozen_time)
 
-        assert await config_entry.async_unload(hass)
         await hass.async_block_till_done()

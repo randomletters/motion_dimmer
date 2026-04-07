@@ -7,7 +7,7 @@ from homeassistant.components.datetime import DOMAIN as DATETIME_DOMAIN
 from homeassistant.components.script import DOMAIN as SCRIPT_DOMAIN
 from homeassistant.components.light import (
     ColorMode,
-    ATTR_COLOR_TEMP,
+    ATTR_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
     ATTR_BRIGHTNESS,
 )
@@ -55,7 +55,7 @@ async def test_home_assistant_adapter(hass: HomeAssistant):
         assert adapter.brightness == 255
         assert adapter.brightness_min == from_pct(DEFAULT_MIN_BRIGHTNESS)
         assert adapter.color_mode == ColorMode.WHITE
-        assert adapter.color_temp is None
+        assert adapter.color_temp_kelvin is None
         assert adapter.rgb_color is None
         delta = (now() - adapter.disabled_until).total_seconds()
         assert -1 < delta < 1
@@ -75,8 +75,10 @@ async def test_home_assistant_adapter(hass: HomeAssistant):
         assert timer.duration == "00:00:00"
 
         # Change color temp to test color mode.
-        await set_segment_light_to(hass, "seg_1", "turn_on", {ATTR_COLOR_TEMP: 500})
-        assert adapter.color_temp == 500
+        await set_segment_light_to(
+            hass, "seg_1", "turn_on", {ATTR_COLOR_TEMP_KELVIN: 500}
+        )
+        assert adapter.color_temp_kelvin == 500
         assert adapter.color_mode == ColorMode.COLOR_TEMP
 
         # Change color to test color mode.
