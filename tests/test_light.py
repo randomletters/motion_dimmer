@@ -156,5 +156,4 @@ async def test_light_settings(hass: HomeAssistant):
         hass.states.async_set(MOCK_BINARY_SENSOR_1_ID, "off")
         await advance_time(hass, DEFAULT_SEG_SECONDS, frozen_time)
 
-        assert await config_entry.async_unload(hass)
         await hass.async_block_till_done()

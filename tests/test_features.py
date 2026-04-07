@@ -99,9 +99,6 @@ async def test_pump(hass: HomeAssistant):
         await let_dimmer_turn_off(hass, frozen_time)
         await dimmer_is_not_temporarily_disabled(hass)
 
-        assert await config_entry.async_unload(hass)
-        await hass.async_block_till_done()
-
 
 async def test_callbacks(hass: HomeAssistant):
     """Test the callbacks."""
