@@ -7,7 +7,7 @@ from unittest.mock import PropertyMock, patch
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_MODE,
-    ATTR_COLOR_TEMP,
+    ATTR_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
     ColorMode,
 )
@@ -73,7 +73,7 @@ async def test_color_modes():
 
     # Test color temp.
     mock_adapter.color_mode = ColorMode.COLOR_TEMP
-    mock_adapter.color_temp = 500
+    mock_adapter.color_temp_kelvin = 500
     mock_adapter.brightness = 33
 
     motion_dimmer.triggered_callback()
@@ -85,11 +85,11 @@ async def test_color_modes():
         get_entry_value(events, "turn_on_dimmer", ATTR_COLOR_MODE)
         == ColorMode.COLOR_TEMP
     )
-    assert get_entry_value(events, "turn_on_dimmer", ATTR_COLOR_TEMP) == 500
+    assert get_entry_value(events, "turn_on_dimmer", ATTR_COLOR_TEMP_KELVIN) == 500
 
     # Test rgb color.
     mock_adapter.color_mode = ColorMode.RGB
-    mock_adapter.color_temp = 500
+    mock_adapter.color_temp_kelvin = 500
     mock_adapter.rgb_color = (255, 0, 0)
     mock_adapter.brightness = 44
 

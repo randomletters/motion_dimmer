@@ -6,7 +6,7 @@ from homeassistant.util.dt import utcnow
 from homeassistant.core import HomeAssistant
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
-    ATTR_COLOR_TEMP,
+    ATTR_COLOR_TEMP_KELVIN,
 )
 from pytest_homeassistant_custom_component.common import (
     async_capture_events,
@@ -129,7 +129,11 @@ async def test_callbacks(hass: HomeAssistant):
         await hass.services.async_call(
             LIGHT_DOMAIN,
             "turn_on",
-            {"entity_id": MOCK_LIGHT_1_ID, ATTR_COLOR_TEMP: 500, ATTR_BRIGHTNESS: 100},
+            {
+                "entity_id": MOCK_LIGHT_1_ID,
+                ATTR_COLOR_TEMP_KELVIN: 500,
+                ATTR_BRIGHTNESS: 100,
+            },
             True,
         )
         await hass.async_block_till_done()

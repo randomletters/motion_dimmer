@@ -300,7 +300,7 @@ class MockAdapter(MotionDimmerAdapter):
     events: list = []
     brightness: int = 0
     color_mode: str = ""
-    color_temp: int = 0
+    color_temp_kelvin: int = 0
     rgb_color: tuple = ()
     seconds: int = 0
     timer: TimerState = None
@@ -322,7 +322,7 @@ class MockAdapter(MotionDimmerAdapter):
         self.trigger_interval = DEFAULT_TRIGGER_INTERVAL
         self.brightness = 255
         self.color_mode = ColorMode.WHITE
-        self.color_temp = None
+        self.color_temp_kelvin = None
         self.rgb_color = None
         self.seconds = DEFAULT_SEG_SECONDS
         self.timer = TimerState(now(), "00:00:00", SENSOR_IDLE)
