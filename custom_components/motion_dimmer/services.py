@@ -7,7 +7,7 @@ from homeassistant.components.datetime import DOMAIN as DATETIME_DOMAIN
 from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.service import ServiceTargetSelector
+from homeassistant.helpers.target import TargetSelection
 from homeassistant.util.dt import now
 
 from .const import (
@@ -88,7 +88,7 @@ def service_finish_timer(hass: HomeAssistant, call: ServiceCall):
 def get_data(hass: HomeAssistant, call: ServiceCall) -> dict[str, MotionDimmerData]:
     """Get the ids from the call."""
 
-    target = ServiceTargetSelector(call)
+    target = TargetSelection(call.data)
 
     data: dict[str, MotionDimmerData] = {}
     entity_reg = er.async_get(hass)

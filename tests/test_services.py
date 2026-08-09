@@ -38,7 +38,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def test_services(hass: HomeAssistant):
     """Test the integration setup."""
-    with freeze_time(utcnow()) as frozen_time:
+    with freeze_time(utcnow(), real_asyncio=True) as frozen_time:
         config_entry = await setup_integration(hass)
 
         # Fire the disable_until service with no time specified.

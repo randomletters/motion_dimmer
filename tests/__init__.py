@@ -50,6 +50,7 @@ from .const import (
     MOCK_OPTIONS,
     MOCK_SCRIPTS,
     SCRIPT_DOMAIN,
+    TEMPLATE_DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -97,9 +98,9 @@ async def setup_integration(
     # Add required entities.
     await async_setup_component(hass, INPUT_SELECT_DOMAIN, MOCK_INPUT_SELECT)
     await hass.async_block_till_done()
-    await async_setup_component(hass, LIGHT_DOMAIN, MOCK_LIGHTS)
+    await async_setup_component(hass, TEMPLATE_DOMAIN, MOCK_LIGHTS)
     await hass.async_block_till_done()
-    await async_setup_component(hass, BINARY_SENSOR_DOMAIN, MOCK_BINARY_SENSORS)
+    await async_setup_component(hass, TEMPLATE_DOMAIN, MOCK_BINARY_SENSORS)
     await hass.async_block_till_done()
     await async_setup_component(hass, SCRIPT_DOMAIN, MOCK_SCRIPTS)
     await hass.async_block_till_done()

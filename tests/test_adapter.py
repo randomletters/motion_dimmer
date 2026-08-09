@@ -46,7 +46,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def test_home_assistant_adapter(hass: HomeAssistant):
     """Test the motion dimmer adapter for Home Assistant."""
-    with freeze_time(utcnow()) as frozen_time:
+    with freeze_time(utcnow(), real_asyncio=True) as frozen_time:
         config_entry = await setup_integration(hass)
         adapter = MotionDimmerHA(hass, config_entry.entry_id)
 

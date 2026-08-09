@@ -6,6 +6,7 @@ from homeassistant.components.light import DOMAIN as LIGHT_DOMAIN
 from homeassistant.components.number import DOMAIN as NUMBER_DOMAIN
 from homeassistant.components.script import DOMAIN as SCRIPT_DOMAIN
 from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
+from homeassistant.components.template import DOMAIN as TEMPLATE_DOMAIN
 
 from custom_components.motion_dimmer.const import (
     CONF_DIMMER,
@@ -58,42 +59,39 @@ MOCK_INPUT_SELECT = {
 MOCK_BINARY_SENSORS = {
     BINARY_SENSOR_DOMAIN: [
         {
-            "platform": "template",
-            "sensors": {
-                MOCK_BINARY_SENSOR_1: {
-                    "friendly_name": "Test Binary Sensor 1",
-                    "value_template": "{{false}}",
-                },
-                MOCK_BINARY_SENSOR_2: {
-                    "friendly_name": "Test Binary Sensor 2",
-                    "value_template": "{{false}}",
-                },
+            MOCK_BINARY_SENSOR_1: {
+                "name": "Test Binary Sensor 1",
+                "unique_id": MOCK_BINARY_SENSOR_1_ID,
+                "value_template": "{{false}}",
+            },
+            MOCK_BINARY_SENSOR_2: {
+                "name": "Test Binary Sensor 2",
+                "unique_id": MOCK_BINARY_SENSOR_2_ID,
+                "value_template": "{{false}}",
             },
         }
     ]
 }
 
-
 MOCK_LIGHTS = {
     LIGHT_DOMAIN: [
         {
-            "platform": "template",
-            "lights": {
-                MOCK_LIGHT_1: {
-                    "friendly_name": "Test Light 1",
-                    "supports_transition_template": True,
-                    "set_temperature": None,
-                    "set_rgb": None,
-                    "turn_on": None,
-                    "turn_off": None,
-                    "set_level": None,
-                },
-                MOCK_LIGHT_2: {
-                    "friendly_name": "Test Light 2",
-                    "turn_on": None,
-                    "turn_off": None,
-                    "set_level": None,
-                },
+            MOCK_LIGHT_1: {
+                "name": "Test Light 1",
+                "unique_id": MOCK_LIGHT_1_ID,
+                "supports_transition": True,
+                "set_temperature": None,
+                "set_rgb": None,
+                "turn_on": None,
+                "turn_off": None,
+                "set_level": None,
+            },
+            MOCK_LIGHT_2: {
+                "name": "Test Light 2",
+                "unique_id": MOCK_LIGHT_2_ID,
+                "turn_on": None,
+                "turn_off": None,
+                "set_level": None,
             },
         }
     ]

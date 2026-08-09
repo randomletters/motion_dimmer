@@ -43,7 +43,7 @@ logging.basicConfig(level=logging.ERROR, force=True)
 
 async def test_light_settings(hass: HomeAssistant):
     """Test changing light settings."""
-    with freeze_time(utcnow()) as frozen_time:
+    with freeze_time(utcnow(), real_asyncio=True) as frozen_time:
         config_entry = await setup_integration(hass)
 
         # Set current segment to brightness 50.
