@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 from datetime import datetime, timedelta
+import json
 from typing import Any
 
 from homeassistant.components.light import (
@@ -10,9 +11,11 @@ from homeassistant.components.light import (
 )
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.core import Event, HomeAssistant
+from homeassistant.helpers import restore_state
 from homeassistant.setup import async_setup_component, logging
-from homeassistant.util.dt import now, parse_duration
+from homeassistant.util.dt import now, parse_duration, utcnow
 from pytest_homeassistant_custom_component.common import (
+    JSONEncoder,
     MockConfigEntry,
     async_fire_time_changed,
 )
@@ -273,6 +276,29 @@ def get_entry_value(log: list[dict], key, subkey) -> Any:
             return entry.get(key).get(subkey)
 
     return None
+
+
+def setup_last_state(hass: HomeAssistant, state: dict) -> None:
+    """Set up the last state for an entity."""
+    key = restore_state.DATA_RESTORE_STATE
+    data = restore_state.RestoreStateData(hass)
+    restored_state = state
+    restored_state = {
+        **restored_state,
+        "attributes": json.loads(
+            json.dumps(restored_state["attributes"], cls=JSONEncoder)
+        ),
+    }
+
+    last_states = {}
+    last_states[restored_state["entity_id"]] = restore_state.StoredState.from_dict(
+        {"state": restored_state, "last_seen": utcnow()}
+    )
+
+    data.last_states = last_states
+
+    restore_state.async_get.cache_clear()
+    hass.data[key] = data
 
 
 class MockAdapter(MotionDimmerAdapter):

@@ -4,16 +4,18 @@ import logging
 
 from freezegun import freeze_time
 from homeassistant.components.datetime import DOMAIN as DATETIME_DOMAIN
-from homeassistant.components.script import DOMAIN as SCRIPT_DOMAIN
 from homeassistant.components.light import (
-    ColorMode,
+    ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
-    ATTR_BRIGHTNESS,
+    ColorMode,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.components.script import DOMAIN as SCRIPT_DOMAIN
+from homeassistant.core import Event, HomeAssistant, State
+from homeassistant.helpers.event import (
+    EventStateChangedData,
+)
 from homeassistant.util.dt import now, utcnow
-
 from pytest_homeassistant_custom_component.common import (
     async_capture_events,
 )
@@ -33,8 +35,8 @@ from tests import (
     advance_time,
     event_extract,
     from_pct,
-    setup_integration,
     set_segment_light_to,
+    setup_integration,
 )
 
 from .const import (
@@ -127,3 +129,27 @@ async def test_home_assistant_adapter(hass: HomeAssistant):
         # Change brightness to 0.
         await set_segment_light_to(hass, "seg_1", "turn_on", {ATTR_BRIGHTNESS: 0})
         assert adapter.brightness == 0
+
+        # Test dimmer state callback.
+        events = async_capture_events(hass, "call_service")
+        statechange = adapter.dimmer_state_callback(
+            Event[EventStateChangedData](
+                "state_changed",
+                {
+                    "entity_id": "light.test_config_light",
+                    "old_state": State(
+                        "light.test_config_light",
+                        "off",
+                    ),
+                    "new_state": State(
+                        "light.test_config_light",
+                        "on",
+                        {
+                            ATTR_BRIGHTNESS: 255,
+                        },
+                    ),
+                },
+            )
+        )
+
+    assert statechange.new_brightness == 255
