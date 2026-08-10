@@ -7,7 +7,6 @@ from homeassistant.const import Platform, EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.event import (
-    async_track_state_change,
     async_track_state_change_event,
 )
 from .const import (
@@ -101,20 +100,18 @@ async def async_setup_entry(
 
     # Add trigger on listener
     if data.triggers:
-        async_track_state_change(
+        async_track_state_change_event(
             hass,
             data.triggers,
             data.motion_dimmer.triggered_callback,
-            to_state="on",
         )
 
     # Add predictor on listener
     if data.predictors:
-        async_track_state_change(
+        async_track_state_change_event(
             hass,
             data.predictors,
             data.motion_dimmer.predictor_callback,
-            to_state="on",
         )
 
     return True

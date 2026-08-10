@@ -37,6 +37,7 @@ _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.ERROR, force=True)
 
 TRIGGER_EVENTS = [
+    "triggered_callback",
     "turn_on_dimmer",
     "cancel_timer",
     "schedule_timer",
@@ -114,7 +115,15 @@ async def test_trigger():
     events = mock_adapter.flush_entries()
 
     # Dimmer is restarted instead of stopped.
-    assert entry_keys(events) == TRIGGER_EVENTS
+    assert entry_keys(events) == [
+        "turn_on_dimmer",
+        "cancel_timer",
+        "schedule_timer",
+        "track_timer",
+        "cancel_periodic_timer",
+        "schedule_periodic_timer",
+        "turn_on_script",
+    ]
 
     # Finish a timer with trigger still on but Motion Dimmer disabled.
     mock_adapter.are_triggers_on = True
@@ -146,6 +155,7 @@ async def test_predictor():
     events = mock_adapter.flush_entries()
 
     prediction_events = [
+        "predictor_callback",
         "turn_on_dimmer",
         "cancel_timer",
         "schedule_timer",
@@ -198,7 +208,9 @@ async def test_predictor():
     events = mock_adapter.flush_entries()
 
     # Nothing is changed.
-    assert entry_keys(events) == []
+    assert entry_keys(events) == [
+        "predictor_callback",
+    ]
 
     # Test dimmer when predictor is on.
     mock_adapter = MockAdapter()
@@ -243,6 +255,7 @@ async def test_pump():
 
     # Dimmer is turned on to prediction brightness for prediction seconds.
     assert entry_keys(events) == [
+        "triggered_callback",
         "turn_on_dimmer",
         "schedule_pump_timer",
     ]
@@ -518,6 +531,7 @@ async def test_periodic_timer():
 
     # Events fired but not periodic timer.
     assert entry_keys(events) == [
+        "triggered_callback",
         "turn_on_dimmer",
         "cancel_timer",
         "schedule_timer",

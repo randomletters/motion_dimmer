@@ -32,25 +32,22 @@ from custom_components.motion_dimmer.const import (
 from custom_components.motion_dimmer.models import (
     MotionDimmerAdapter,
     TimerState,
+    TriggerStateChange,
     external_id,
 )
 
 from .const import (
-    BINARY_SENSOR_DOMAIN,
     CONFIG_NAME,
     INPUT_SELECT_DOMAIN,
     LIGHT_DOMAIN,
     MOCK_BINARY_SENSOR_1_ID,
     MOCK_BINARY_SENSOR_2_ID,
-    MOCK_BINARY_SENSORS,
     MOCK_CONFIG,
     MOCK_INPUT_SELECT,
     MOCK_LIGHT_1_ID,
-    MOCK_LIGHTS,
     MOCK_OPTIONS,
     MOCK_SCRIPTS,
     SCRIPT_DOMAIN,
-    TEMPLATE_DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -97,10 +94,6 @@ async def setup_integration(
 
     # Add required entities.
     await async_setup_component(hass, INPUT_SELECT_DOMAIN, MOCK_INPUT_SELECT)
-    await hass.async_block_till_done()
-    await async_setup_component(hass, TEMPLATE_DOMAIN, MOCK_LIGHTS)
-    await hass.async_block_till_done()
-    await async_setup_component(hass, TEMPLATE_DOMAIN, MOCK_BINARY_SENSORS)
     await hass.async_block_till_done()
     await async_setup_component(hass, SCRIPT_DOMAIN, MOCK_SCRIPTS)
     await hass.async_block_till_done()
@@ -328,6 +321,7 @@ class MockAdapter(MotionDimmerAdapter):
         self.seconds = DEFAULT_SEG_SECONDS
         self.timer = TimerState(now(), "00:00:00", SENSOR_IDLE)
         self._state_change = None
+        self._trigger_state_change = TriggerStateChange(False, True)
 
     def flush_entries(self):
         """Return the entries and clear the log."""
@@ -344,6 +338,14 @@ class MockAdapter(MotionDimmerAdapter):
     def dimmer_state_callback(self, *args, **kwargs) -> None:
         self._log.append({"dimmer_state_callback": kwargs})
         return self._state_change
+
+    def predictor_callback(self, *args, **kwargs) -> None:
+        self._log.append({"predictor_callback": kwargs})
+        return self._trigger_state_change
+
+    def triggered_callback(self, *args, **kwargs) -> None:
+        self._log.append({"triggered_callback": kwargs})
+        return self._trigger_state_change
 
     def schedule_periodic_timer(self, time, callback) -> None:
         self._log.append(

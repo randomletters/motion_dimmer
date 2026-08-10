@@ -120,22 +120,4 @@ async def test_callbacks(hass: HomeAssistant):
         # Dimmer is set to brightness 50.
         await dimmer_is_set_to(events, {ATTR_BRIGHTNESS: 50})
         await dimmer_is_not_temporarily_disabled(hass)
-
-        # Manually change light to brightness 100
-        # (include color temp because of issue with light templates)
-        await hass.services.async_call(
-            domain=LIGHT_DOMAIN,
-            service="turn_on",
-            service_data={
-                "entity_id": MOCK_LIGHT_1_ID,
-                ATTR_COLOR_TEMP_KELVIN: 500,
-                ATTR_BRIGHTNESS: 100,
-            },
-            blocking=True,
-        )
-        await hass.async_block_till_done()
-
-        # Motion Dimmer disabled from brightness change.
-        # assert round(get_disable_delta(hass)) > 598
-
         await let_dimmer_turn_off(hass, frozen_time)

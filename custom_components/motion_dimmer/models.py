@@ -227,6 +227,10 @@ class MotionDimmerAdapter:  # pragma: no cover
         """Callback when dimmer state changes."""
         raise NotImplementedError
 
+    def predictor_callback(self, *args, **kwargs) -> dict:
+        """Callback when predictor state changes."""
+        raise NotImplementedError
+
     def schedule_periodic_timer(self, time, callback) -> None:
         """Start the periodic timer to check triggers."""
         raise NotImplementedError
@@ -245,6 +249,10 @@ class MotionDimmerAdapter:  # pragma: no cover
 
     def track_timer(self, timer_end, duration, state) -> None:
         """Store changes in timer."""
+        raise NotImplementedError
+
+    def triggered_callback(self, *args, **kwargs) -> dict:
+        """Callback when trigger state changes."""
         raise NotImplementedError
 
     def turn_on_dimmer(self, **kwargs) -> None:
@@ -440,6 +448,17 @@ class MotionDimmerHA(MotionDimmerAdapter):
         """Get the entity id from entity data."""
         return external_id(self.hass, ced, self.data.device_id, seg_id)
 
+    def predictor_callback(
+        self, event: Event[EventStateChangedData]
+    ) -> TriggerStateChange:
+        """Check if dimmer was changed manually."""
+        old_state = event.data["old_state"]
+        new_state = event.data["new_state"]
+        return TriggerStateChange(
+            old_state.state == "on" if old_state else False,
+            new_state.state == "on" if new_state else False,
+        )
+
     def schedule_periodic_timer(self, time: datetime, callback) -> None:
         """Start the periodic timer to check triggers."""
         asyncio.run_coroutine_threadsafe(
@@ -509,6 +528,17 @@ class MotionDimmerHA(MotionDimmerAdapter):
                 "entity_id": self.external_id(CE.DISABLED_UNTIL),
                 "datetime": next_time,
             },
+        )
+
+    def triggered_callback(
+        self, event: Event[EventStateChangedData]
+    ) -> TriggerStateChange:
+        """Check if dimmer was changed manually."""
+        old_state = event.data["old_state"]
+        new_state = event.data["new_state"]
+        return TriggerStateChange(
+            old_state.state == "on" if old_state else False,
+            new_state.state == "on" if new_state else False,
         )
 
     def turn_on_dimmer(self, **kwargs) -> None:
@@ -764,8 +794,14 @@ class MotionDimmer:
 
     def predictor_callback(self, *args, **kwargs) -> None:
         """Run when predictors are activated."""
+        if not self.is_enabled:
+            return
+
+        # Pass callback to adapter for platform-specific handling.
+        change = self.adapter.predictor_callback(*args, **kwargs)
+
         # Do nothing if the dimmer is already on.
-        if self.adapter.is_dimmer_on or not self.is_enabled:
+        if self.adapter.is_dimmer_on or not change.is_on:
             return
 
         self.start_dimmer(is_prediction=True)
@@ -888,7 +924,13 @@ class MotionDimmer:
 
     def triggered_callback(self, *args, **kwargs) -> None:
         """Run when triggers are activated."""
-        if self.is_enabled:
+        if not self.is_enabled:
+            return
+
+        # Pass callback to adapter for platform-specific handling.
+        change = self.adapter.triggered_callback(*args, **kwargs)
+
+        if change.is_on:
             self.start_dimmer()
 
     def turn_on_dimmer(self, brightness: int | None = None):
@@ -904,7 +946,7 @@ class MotionDimmer:
 
 @dataclass
 class DimmerStateChange:
-    """State change data."""
+    """Dimmer State change data."""
 
     was_on: bool
     is_on: bool
@@ -919,3 +961,11 @@ class TimerState:
     end_time: datetime
     duration: str
     state: str
+
+
+@dataclass
+class TriggerStateChange:
+    """Trigger State change data."""
+
+    was_on: bool
+    is_on: bool
