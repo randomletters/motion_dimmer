@@ -152,55 +152,55 @@ async def test_home_assistant_adapter(hass: HomeAssistant):
             )
         )
 
-    assert statechange.new_brightness == 255
+        assert statechange.new_brightness == 255
 
-    # Test predictor callback.
-    statechange = adapter.predictor_callback(
-        Event[EventStateChangedData](
-            "state_changed",
-            {
-                "entity_id": "binary_sensor.test_config_binary_sensor",
-                "old_state": State(
-                    "binary_sensor.test_config_binary_sensor",
-                    "off",
-                ),
-                "new_state": State(
-                    "binary_sensor.test_config_binary_sensor",
-                    "on",
-                ),
-            },
+        # Test predictor callback.
+        statechange = adapter.predictor_callback(
+            Event[EventStateChangedData](
+                "state_changed",
+                {
+                    "entity_id": "binary_sensor.test_config_binary_sensor",
+                    "old_state": State(
+                        "binary_sensor.test_config_binary_sensor",
+                        "off",
+                    ),
+                    "new_state": State(
+                        "binary_sensor.test_config_binary_sensor",
+                        "on",
+                    ),
+                },
+            )
         )
-    )
 
-    assert statechange.was_on is False
+        assert statechange.was_on is False
 
-    # Test triggered callback.
-    statechange = adapter.triggered_callback(
-        Event[EventStateChangedData](
-            "state_changed",
-            {
-                "entity_id": "binary_sensor.test_config_binary_sensor",
-                "old_state": State(
-                    "binary_sensor.test_config_binary_sensor",
-                    "off",
-                ),
-                "new_state": State(
-                    "binary_sensor.test_config_binary_sensor",
-                    "on",
-                ),
-            },
+        # Test triggered callback.
+        statechange = adapter.triggered_callback(
+            Event[EventStateChangedData](
+                "state_changed",
+                {
+                    "entity_id": "binary_sensor.test_config_binary_sensor",
+                    "old_state": State(
+                        "binary_sensor.test_config_binary_sensor",
+                        "off",
+                    ),
+                    "new_state": State(
+                        "binary_sensor.test_config_binary_sensor",
+                        "on",
+                    ),
+                },
+            )
         )
-    )
 
-    assert statechange.was_on is False
+        assert statechange.was_on is False
 
-    # Test is on
-    await trigger_motion_dimmer(hass, frozen_time)
-    await hass.async_block_till_done()
+        # Test is on
+        await trigger_motion_dimmer(hass, frozen_time)
+        await hass.async_block_till_done()
 
-    assert adapter.are_triggers_on is True
+        assert adapter.are_triggers_on is True
 
-    # Test temp disable.
-    # await adapter.set_temporarily_disabled(now() + timedelta(seconds=10))
+        # Test temp disable.
+        # await adapter.set_temporarily_disabled(now() + timedelta(seconds=10))
 
-    # assert get_disable_delta(hass) > 0
+        # assert get_disable_delta(hass) > 0
