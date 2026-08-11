@@ -4,16 +4,18 @@ import logging
 
 from freezegun import freeze_time
 from homeassistant.components.datetime import DOMAIN as DATETIME_DOMAIN
-from homeassistant.components.script import DOMAIN as SCRIPT_DOMAIN
 from homeassistant.components.light import (
-    ColorMode,
+    ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
-    ATTR_BRIGHTNESS,
+    ColorMode,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.components.script import DOMAIN as SCRIPT_DOMAIN
+from homeassistant.core import Event, HomeAssistant, State
+from homeassistant.helpers.event import (
+    EventStateChangedData,
+)
 from homeassistant.util.dt import now, utcnow
-
 from pytest_homeassistant_custom_component.common import (
     async_capture_events,
 )
@@ -33,8 +35,9 @@ from tests import (
     advance_time,
     event_extract,
     from_pct,
-    setup_integration,
     set_segment_light_to,
+    setup_integration,
+    trigger_motion_dimmer,
 )
 
 from .const import (
@@ -51,7 +54,7 @@ async def test_home_assistant_adapter(hass: HomeAssistant):
         adapter = MotionDimmerHA(hass, config_entry.entry_id)
 
         # Read defaults from Home Assistant
-        assert adapter.are_triggers_on == False
+        assert adapter.are_triggers_on is False
         assert adapter.brightness == 255
         assert adapter.brightness_min == from_pct(DEFAULT_MIN_BRIGHTNESS)
         assert adapter.color_mode == ColorMode.WHITE
@@ -60,9 +63,9 @@ async def test_home_assistant_adapter(hass: HomeAssistant):
         delta = (now() - adapter.disabled_until).total_seconds()
         assert -1 < delta < 1
         assert adapter.extension_max == DEFAULT_EXTENSION_MAX
-        assert adapter.is_dimmer_on == False
-        assert adapter.is_segment_enabled
-        assert adapter.is_on
+        assert adapter.is_dimmer_on is False
+        assert adapter.is_segment_enabled is True
+        assert adapter.is_on is True
         assert adapter.manual_override == 600
         assert adapter.segment_id == "seg_1"
         assert adapter.prediction_brightness == from_pct(DEFAULT_PREDICTION_BRIGHTNESS)
@@ -127,3 +130,77 @@ async def test_home_assistant_adapter(hass: HomeAssistant):
         # Change brightness to 0.
         await set_segment_light_to(hass, "seg_1", "turn_on", {ATTR_BRIGHTNESS: 0})
         assert adapter.brightness == 0
+
+        # Test dimmer state callback.
+        statechange = adapter.dimmer_state_callback(
+            Event[EventStateChangedData](
+                "state_changed",
+                {
+                    "entity_id": "light.test_config_light",
+                    "old_state": State(
+                        "light.test_config_light",
+                        "off",
+                    ),
+                    "new_state": State(
+                        "light.test_config_light",
+                        "on",
+                        {
+                            ATTR_BRIGHTNESS: 255,
+                        },
+                    ),
+                },
+            )
+        )
+
+    assert statechange.new_brightness == 255
+
+    # Test predictor callback.
+    statechange = adapter.predictor_callback(
+        Event[EventStateChangedData](
+            "state_changed",
+            {
+                "entity_id": "binary_sensor.test_config_binary_sensor",
+                "old_state": State(
+                    "binary_sensor.test_config_binary_sensor",
+                    "off",
+                ),
+                "new_state": State(
+                    "binary_sensor.test_config_binary_sensor",
+                    "on",
+                ),
+            },
+        )
+    )
+
+    assert statechange.was_on is False
+
+    # Test triggered callback.
+    statechange = adapter.triggered_callback(
+        Event[EventStateChangedData](
+            "state_changed",
+            {
+                "entity_id": "binary_sensor.test_config_binary_sensor",
+                "old_state": State(
+                    "binary_sensor.test_config_binary_sensor",
+                    "off",
+                ),
+                "new_state": State(
+                    "binary_sensor.test_config_binary_sensor",
+                    "on",
+                ),
+            },
+        )
+    )
+
+    assert statechange.was_on is False
+
+    # Test is on
+    await trigger_motion_dimmer(hass, frozen_time)
+    await hass.async_block_till_done()
+
+    assert adapter.are_triggers_on is True
+
+    # Test temp disable.
+    # await adapter.set_temporarily_disabled(now() + timedelta(seconds=10))
+
+    # assert get_disable_delta(hass) > 0

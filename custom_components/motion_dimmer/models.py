@@ -7,27 +7,26 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+from homeassistant.components.datetime import DOMAIN as DATETIME_DOMAIN
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
-    ATTR_COLOR_TEMP_KELVIN,
     ATTR_COLOR_MODE,
+    ATTR_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
     ATTR_TRANSITION,
     ColorMode,
 )
-from homeassistant.core import Event
 from homeassistant.components.light import DOMAIN as LIGHT_DOMAIN
-from homeassistant.components.datetime import DOMAIN as DATETIME_DOMAIN
 from homeassistant.components.script import DOMAIN as SCRIPT_DOMAIN
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_FRIENDLY_NAME, ATTR_ICON
-from homeassistant.core import HassJob, HomeAssistant
+from homeassistant.core import Event, HassJob, HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import (
-    async_track_point_in_time,
     EventStateChangedData,
+    async_track_point_in_time,
 )
 from homeassistant.util import slugify
 from homeassistant.util.dt import now
@@ -109,8 +108,8 @@ class MotionDimmerEntity(Entity):
         self,
         data: MotionDimmerData,
         entity_name: str,
-        unique_id: str = None,
-        entity_id: str = None,
+        unique_id: str | None = None,
+        entity_id: str | None = None,
     ) -> None:
         """Set up the base class."""
         self._data = data
@@ -290,9 +289,10 @@ class MotionDimmerHA(MotionDimmerAdapter):
     def brightness(self) -> int:
         """The brightness to set the dimmer to."""
         entity_id = self.external_id(CE.SEG_LIGHT, self.segment_id)
-        if state := self.hass.states.get(entity_id):
-            if bright := state.attributes.get(ATTR_BRIGHTNESS):
-                return int(bright)
+        if (state := self.hass.states.get(entity_id)) and (
+            bright := state.attributes.get(ATTR_BRIGHTNESS)
+        ):
+            return int(bright)
 
         # Some dimmers do not return brightness when off.
         return 0
@@ -429,10 +429,9 @@ class MotionDimmerHA(MotionDimmerAdapter):
             self._cancel_periodic_timer()
             self._cancel_periodic_timer = None
 
-    def dimmer_state_callback(
-        self, event: Event[EventStateChangedData]
-    ) -> DimmerStateChange:
+    def dimmer_state_callback(self, *args, **kwargs) -> DimmerStateChange:
         """Check if dimmer was changed manually."""
+        event: Event[EventStateChangedData] = args[0]
         old_state = event.data["old_state"]
         new_state = event.data["new_state"]
         return DimmerStateChange(
@@ -448,10 +447,9 @@ class MotionDimmerHA(MotionDimmerAdapter):
         """Get the entity id from entity data."""
         return external_id(self.hass, ced, self.data.device_id, seg_id)
 
-    def predictor_callback(
-        self, event: Event[EventStateChangedData]
-    ) -> TriggerStateChange:
+    def predictor_callback(self, *args, **kwargs) -> TriggerStateChange:
         """Check if dimmer was changed manually."""
+        event: Event[EventStateChangedData] = args[0]
         old_state = event.data["old_state"]
         new_state = event.data["new_state"]
         return TriggerStateChange(
@@ -530,10 +528,12 @@ class MotionDimmerHA(MotionDimmerAdapter):
             },
         )
 
-    def triggered_callback(
-        self, event: Event[EventStateChangedData]
-    ) -> TriggerStateChange:
+    def triggered_callback(self, *args, **kwargs) -> TriggerStateChange:
         """Check if dimmer was changed manually."""
+        event: Event[EventStateChangedData] = args[0]
+        if event is None:  # pragma: no cover
+            _LOGGER.error("No event provided to triggered_callback")
+            return TriggerStateChange(False, False)
         old_state = event.data["old_state"]
         new_state = event.data["new_state"]
         return TriggerStateChange(
