@@ -108,8 +108,8 @@ class MotionDimmerEntity(Entity):
         self,
         data: MotionDimmerData,
         entity_name: str,
-        unique_id: str = None,
-        entity_id: str = None,
+        unique_id: str | None = None,
+        entity_id: str | None = None,
     ) -> None:
         """Set up the base class."""
         self._data = data
@@ -289,9 +289,10 @@ class MotionDimmerHA(MotionDimmerAdapter):
     def brightness(self) -> int:
         """The brightness to set the dimmer to."""
         entity_id = self.external_id(CE.SEG_LIGHT, self.segment_id)
-        if state := self.hass.states.get(entity_id):
-            if bright := state.attributes.get(ATTR_BRIGHTNESS):
-                return int(bright)
+        if (state := self.hass.states.get(entity_id)) and (
+            bright := state.attributes.get(ATTR_BRIGHTNESS)
+        ):
+            return int(bright)
 
         # Some dimmers do not return brightness when off.
         return 0
@@ -530,7 +531,7 @@ class MotionDimmerHA(MotionDimmerAdapter):
     def triggered_callback(self, *args, **kwargs) -> TriggerStateChange:
         """Check if dimmer was changed manually."""
         event: Event[EventStateChangedData] = args[0]
-        if event is None:
+        if event is None:  # pragma: no cover
             _LOGGER.error("No event provided to triggered_callback")
             return TriggerStateChange(False, False)
         old_state = event.data["old_state"]
